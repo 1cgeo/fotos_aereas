@@ -35,3 +35,11 @@ export function selectProject(store, projectId) {
   store.setState((state) => replaceNested(state, 'projects', { selectedId: projectId }));
 }
 
+export function setActiveTool(store, activeToolId, activationError = null) {
+  store.setState((state) => replaceNested(state, 'tools', { activeToolId, activationError }));
+}
+
+export function updateQuery(store, patch) {
+  store.setState((state) => replaceNested(state, 'query', patch));
+}
+

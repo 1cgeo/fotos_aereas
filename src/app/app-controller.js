@@ -6,15 +6,36 @@ import {
   setProjectLoadState
 } from './actions.js';
 import { createProjectRepository } from '../data/project-repository.js';
+import { createAnalysisRegistry } from '../analysis/analysis-registry.js';
+import { createAnalysisRunner } from '../analysis/analysis-runner.js';
+import { pointIntersectionAnalysis } from '../analysis/point-intersection.analysis.js';
 import { createMap } from '../map/create-map.js';
 import { ensureProjectLayers, setProjectVisibility } from '../map/project-layers.js';
 import { renderProjectDetails, renderProjectsView } from '../ui/project-panel.js';
+import { renderQueryPanel } from '../ui/query-panel.js';
+import { createQueryToolbar } from '../ui/query-toolbar.js';
+import { createPointQueryTool } from '../tools/point-query/point-query-tool.js';
+import { createToolManager } from '../tools/tool-manager.js';
 
 export async function initializeApplication({ config, store, ui }) {
   const repository = createProjectRepository(config);
   const map = await createMap(ui.map, config);
   setMapReady(store, true);
   let panelView = 'projects';
+  const registry = createAnalysisRegistry();
+  registry.register(pointIntersectionAnalysis);
+  const runner = createAnalysisRunner({ config, store, repository, registry });
+  const toolManager = createToolManager(store);
+  const pointTool = toolManager.register(createPointQueryTool({ map, runner, store }));
+  const toolbar = createQueryToolbar(ui.toolbar, ui.scope, {
+    onActivate: (toolId) => toolManager.activate(toolId),
+    onDeactivate: () => toolManager.deactivate('chip'),
+    onClear: () => {
+      runner.clear();
+      pointTool.clearGeometry();
+      panelView = 'projects';
+    }
+  });
 
   function updateScope() {
     const count = store.getState().projects.activeIds.size;
@@ -25,6 +46,17 @@ export async function initializeApplication({ config, store, ui }) {
 
   function renderPanel() {
     const state = store.getState();
+    if (state.query.status !== 'idle') {
+      renderQueryPanel(ui.sidebarContent, state.query, {
+        onClear: () => {
+          runner.clear();
+          pointTool.clearGeometry();
+          panelView = 'projects';
+        },
+        onCancel: () => runner.cancel()
+      });
+      return;
+    }
     if (panelView === 'details' && state.projects.selectedId) {
       const project = config.projects.find((item) => item.id === state.projects.selectedId);
       if (project) {
@@ -83,6 +115,20 @@ export async function initializeApplication({ config, store, ui }) {
 
   renderPanel();
   updateScope();
+  toolbar.update(store.getState());
+  const unsubscribe = store.subscribe((state) => {
+    updateScope();
+    toolbar.update(state);
+    renderPanel();
+  });
+
+  const handleKeyDown = (event) => {
+    if (event.key !== 'Escape') return;
+    const status = store.getState().query.status;
+    if (status === 'loading-projects' || status === 'running') runner.cancel();
+    else toolManager.deactivate('escape');
+  };
+  document.addEventListener('keydown', handleKeyDown);
 
   const initiallyActive = config.projects.filter((project) => project.initiallyActive);
   for (let index = 0; index < initiallyActive.length; index += 1) {
@@ -92,14 +138,20 @@ export async function initializeApplication({ config, store, ui }) {
   return Object.freeze({
     map,
     repository,
+    registry,
+    runner,
+    toolManager,
     toggleProject,
     showProjects() {
       panelView = 'projects';
       renderPanel();
     },
     destroy() {
+      unsubscribe();
+      document.removeEventListener('keydown', handleKeyDown);
+      toolManager.destroy();
+      runner.cancel();
       map.remove();
     }
   });
 }
-

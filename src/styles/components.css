@@ -193,6 +193,118 @@
   font-size: 0.7rem;
 }
 
+.map-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: calc(100% - 5rem);
+}
+
+.tool-buttons {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 4px 16px rgb(15 23 42 / 12%);
+}
+
+.tool-button {
+  min-height: 2.5rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.tool-button:hover:not(:disabled),
+.tool-button--active {
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+.tool-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.active-tool-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.35rem 0.45rem 0.35rem 0.7rem;
+  border: 1px solid #93c5fd;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.active-tool-chip[hidden] {
+  display: none;
+}
+
+.active-tool-chip__close {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #1e3a8a;
+  font-size: 1.2rem;
+}
+
+.query-panel__title {
+  margin: 0;
+}
+
+.query-progress__label,
+.query-progress__value,
+.query-summary {
+  margin: 0.5rem 0;
+}
+
+.query-progress__value {
+  color: var(--color-text-muted);
+}
+
+.query-warning {
+  padding: 0.75rem;
+  border: 1px solid #facc15;
+  border-radius: var(--radius-sm);
+  background: #fefce8;
+  color: #713f12;
+}
+
+.query-result-list {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.query-result-basic {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+.query-result-basic span {
+  color: var(--color-text-muted);
+}
+
 .loading-screen,
 .fatal-error {
   display: grid;

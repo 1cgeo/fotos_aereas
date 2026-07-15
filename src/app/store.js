@@ -25,7 +25,8 @@ export function createInitialState(config) {
       scopeProjectIds: [],
       results: [],
       projectErrors: [],
-      queryId: null
+      queryId: null,
+      progress: null
     },
     downloads: {
       snapshotId: null,
@@ -62,4 +63,3 @@ export function createStore(initialState) {
     }
   });
 }
-
