@@ -8,6 +8,7 @@
 4. Consulta poligonal: ferramenta própria, preview, atalhos, validação de auto-interseção e edição por vértices.
 5. Resultados e downloads: cartões, highlight, relatório PDF e fila individual.
 6. Produção: responsividade, acessibilidade, CSP/headers, divisão de bundle, testes de segurança e E2E.
+7. Revisão de UI/UX: temas explícitos persistentes, bottom sheet recolhível, contextos do painel, toolbar compacta e auditoria multirresolução.
 
 ## Fluxo de aceitação rápido
 

@@ -8,6 +8,7 @@ O repositório já inclui dois aerolevantamentos fictícios de Brasília, seis f
 
 - catálogo configurável de aerolevantamentos;
 - mapa MapLibre com OpenStreetMap de referência;
+- temas claro e escuro escolhidos manualmente, com persistência local e sem modo automático;
 - ativação independente das grades de voo;
 - consulta por clique, incluindo todas as fotografias sobrepostas;
 - ferramenta própria para desenho e edição de polígono, sem Terra Draw;
@@ -15,6 +16,7 @@ O repositório já inclui dois aerolevantamentos fictícios de Brasília, seis f
 - resultados com thumbnail, metadados, destaque no mapa e download individual;
 - PDF dinâmico com os dados dos voos e fotografias selecionadas;
 - fila manual de downloads, uma imagem por vez, adequada a arquivos pesados;
+- painel recolhível em tablets e celulares, toolbar compacta e resultados adaptáveis;
 - validação de configuração, GeoJSON, URLs e nomes de arquivo no cliente.
 
 ## Desenvolvimento
@@ -51,7 +53,7 @@ npm.cmd run build
 npm.cmd run test:e2e
 ```
 
-Os testes ponta a ponta usam o Chrome instalado em `C:\Program Files\Google\Chrome\Application\chrome.exe` no Windows. Em CI/Linux, instale o Chromium do Playwright com `npx playwright install --with-deps chromium`; o arquivo de configuração usa o navegador gerenciado fora do Windows.
+Os testes ponta a ponta usam o Chrome instalado em `C:\Program Files\Google\Chrome\Application\chrome.exe` no Windows. Em Linux, instale o Chromium do Playwright com `npx playwright install --with-deps chromium`; o arquivo de configuração usa o navegador gerenciado fora do Windows.
 
 ## Publicação e segurança
 
@@ -74,4 +76,4 @@ Antes de publicar, revise o checklist completo em [`docs/plano/08-desempenho-seg
 
 ## Arquitetura e plano
 
-A documentação completa está em [`docs/plano/README.md`](docs/plano/README.md). A implementação mantém módulos separados para configuração, dados, mapa, ferramentas, análises, downloads, interface e estado global.
+A documentação completa está em [`docs/plano/README.md`](docs/plano/README.md). A auditoria dos componentes e tamanhos de tela está em [`docs/REVISAO_UI_UX.md`](docs/REVISAO_UI_UX.md). A implementação mantém módulos separados para configuração, dados, mapa, ferramentas, análises, downloads, interface e estado global.
