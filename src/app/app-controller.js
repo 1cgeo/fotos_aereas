@@ -13,6 +13,7 @@ import { polygonIntersectionAnalysis } from '../analysis/polygon-intersection.an
 import { createMap } from '../map/create-map.js';
 import { ensureProjectLayers, setProjectVisibility } from '../map/project-layers.js';
 import { clearResultHighlight, showResultHighlight } from '../map/result-highlight.js';
+import { applyMapTheme } from '../map/map-theme.js';
 import { createDownloadController } from '../downloads/download-controller.js';
 import { renderProjectDetails, renderProjectsView } from '../ui/project-panel.js';
 import { renderQueryPanel } from '../ui/query-panel.js';
@@ -21,9 +22,10 @@ import { createPointQueryTool } from '../tools/point-query/point-query-tool.js';
 import { createPolygonQueryTool } from '../tools/polygon-query/polygon-query-tool.js';
 import { createToolManager } from '../tools/tool-manager.js';
 
-export async function initializeApplication({ config, store, ui }) {
+export async function initializeApplication({ config, store, ui, themeController }) {
   const repository = createProjectRepository(config);
   const map = await createMap(ui.map, config);
+  const unsubscribeTheme = themeController?.subscribe((theme) => applyMapTheme(map, theme));
   setMapReady(store, true);
   let panelView = 'projects';
   const registry = createAnalysisRegistry();
@@ -170,6 +172,8 @@ export async function initializeApplication({ config, store, ui }) {
     },
     destroy() {
       unsubscribe();
+      unsubscribeTheme?.();
+      ui.destroy?.();
       document.removeEventListener('keydown', handleKeyDown);
       toolManager.destroy();
       runner.cancel();

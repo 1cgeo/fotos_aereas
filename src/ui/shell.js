@@ -29,7 +29,38 @@ export function renderFatalError(root, error) {
   root.replaceChildren(container);
 }
 
-export function renderAppShell(root, config) {
+function createThemeSelector(themeController) {
+  const group = createElement('div', 'theme-selector');
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', 'Tema da interface');
+  const options = [
+    { id: 'light', icon: '☀', label: 'Claro' },
+    { id: 'dark', icon: '☾', label: 'Escuro' }
+  ];
+  const buttons = new Map();
+  for (const option of options) {
+    const button = createElement('button', 'theme-option');
+    button.type = 'button';
+    button.dataset.theme = option.id;
+    button.setAttribute('aria-label', `Usar tema ${option.label.toLowerCase()}`);
+    const icon = createElement('span', 'theme-option__icon', option.icon);
+    icon.setAttribute('aria-hidden', 'true');
+    button.append(icon, createElement('span', 'theme-option__label', option.label));
+    button.addEventListener('click', () => themeController.setTheme(option.id));
+    buttons.set(option.id, button);
+    group.append(button);
+  }
+  const unsubscribe = themeController.subscribe((theme) => {
+    for (const [id, button] of buttons) {
+      const active = id === theme;
+      button.setAttribute('aria-pressed', String(active));
+      button.classList.toggle('theme-option--active', active);
+    }
+  });
+  return { element: group, destroy: unsubscribe };
+}
+
+export function renderAppShell(root, config, { themeController }) {
   const app = createElement('div', 'app-shell');
 
   const header = createElement('header', 'app-header');
@@ -38,7 +69,8 @@ export function renderAppShell(root, config) {
     createElement('span', 'app-kicker', 'Acervo cartográfico'),
     createElement('h1', 'app-title', config.site.title)
   );
-  header.append(identity);
+  const themeSelector = createThemeSelector(themeController);
+  header.append(identity, themeSelector.element);
 
   const main = createElement('main', 'app-main');
   const sidebar = createElement('aside', 'sidebar');
@@ -77,6 +109,10 @@ export function renderAppShell(root, config) {
   root.replaceChildren(app);
   document.title = config.site.title;
 
-  return Object.freeze({ app, header, main, sidebar, sidebarContent, workspace, toolbar, scope, map });
+  return Object.freeze({
+    app, header, main, sidebar, sidebarContent, workspace, toolbar, scope, map,
+    destroy() {
+      themeSelector.destroy();
+    }
+  });
 }
-

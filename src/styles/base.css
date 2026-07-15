@@ -45,10 +45,9 @@ input:focus-visible {
 
 .button--primary {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-on-primary);
 }
 
 .button--primary:hover {
-  background: var(--color-primary-dark);
+  background: var(--color-primary-hover);
 }
-

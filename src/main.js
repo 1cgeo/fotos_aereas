@@ -6,6 +6,9 @@ import './styles/components.css';
 import { createInitialState, createStore } from './app/store.js';
 import { loadRuntimeConfig } from './config/load-config.js';
 import { renderAppShell, renderFatalError, renderLoadingScreen } from './ui/shell.js';
+import { createThemeController } from './theme/theme-controller.js';
+
+const themeController = createThemeController();
 
 async function bootstrap() {
   const root = document.querySelector('#app');
@@ -19,11 +22,11 @@ async function bootstrap() {
     const configUrl = new URL(`${import.meta.env.BASE_URL}config.js`, window.location.origin);
     const config = await loadRuntimeConfig(configUrl);
     const store = createStore(createInitialState(config));
-    const ui = renderAppShell(root, config);
+    const ui = renderAppShell(root, config, { themeController });
     const { initializeApplication } = await import('./app/app-controller.js');
-    const controller = await initializeApplication({ config, store, ui });
+    const controller = await initializeApplication({ config, store, ui, themeController });
 
-    globalThis.__AERIAL_APP__ = Object.freeze({ config, store, ui, controller });
+    globalThis.__AERIAL_APP__ = Object.freeze({ config, store, ui, controller, themeController });
   } catch (error) {
     console.error('Falha ao iniciar o portal:', error);
     renderFatalError(root, error);

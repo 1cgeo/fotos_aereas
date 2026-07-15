@@ -79,3 +79,18 @@ test('mantém ferramentas e desenho utilizáveis em tela estreita', async ({ pag
   await expect(page.getByRole('group', { name: 'Controles do desenho' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Cancelar desenho' })).toBeVisible();
 });
+
+test('mantém tema explícito persistido sem seguir o sistema', async ({ page }) => {
+  await page.evaluate(() => localStorage.removeItem('aerial-catalog-theme'));
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+
+  await page.getByRole('button', { name: 'Usar tema escuro' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+  await page.getByRole('button', { name: 'Usar tema claro' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+});
