@@ -4,7 +4,6 @@ import './styles/layout.css';
 import './styles/components.css';
 
 import { createInitialState, createStore } from './app/store.js';
-import { initializeApplication } from './app/app-controller.js';
 import { loadRuntimeConfig } from './config/load-config.js';
 import { renderAppShell, renderFatalError, renderLoadingScreen } from './ui/shell.js';
 
@@ -21,6 +20,7 @@ async function bootstrap() {
     const config = await loadRuntimeConfig(configUrl);
     const store = createStore(createInitialState(config));
     const ui = renderAppShell(root, config);
+    const { initializeApplication } = await import('./app/app-controller.js');
     const controller = await initializeApplication({ config, store, ui });
 
     globalThis.__AERIAL_APP__ = Object.freeze({ config, store, ui, controller });

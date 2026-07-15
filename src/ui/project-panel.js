@@ -34,7 +34,7 @@ export function renderProjectsView(container, config, state, handlers) {
     checkbox.type = 'checkbox';
     checkbox.checked = active;
     checkbox.disabled = loadState?.status === 'loading';
-    checkbox.setAttribute('aria-label', `${active ? 'Ocultar' : 'Mostrar'} ${project.title}`);
+    checkbox.setAttribute('aria-label', `${active ? 'Desligar' : 'Ligar'} ${project.title}`);
     checkbox.addEventListener('change', () => handlers.onToggle(project.id, checkbox.checked));
     const swatch = element('span', 'project-switch__visual');
     swatch.style.setProperty('--project-color', project.style.color);
@@ -103,4 +103,3 @@ export function renderProjectDetails(container, project, active, handlers) {
   if (project.credits) article.append(element('p', 'project-details__credits', project.credits));
   container.replaceChildren(back, article);
 }
-

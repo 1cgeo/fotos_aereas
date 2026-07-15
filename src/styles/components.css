@@ -444,6 +444,25 @@
   }
 }
 
+@media (max-width: 760px) {
+  .tool-buttons {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .tool-button {
+    flex: 0 0 auto;
+  }
+
+  .active-tool-chip {
+    display: none;
+  }
+
+  .drawing-controls {
+    bottom: calc(42% + 1.5rem);
+  }
+}
+
 .loading-screen,
 .fatal-error {
   display: grid;

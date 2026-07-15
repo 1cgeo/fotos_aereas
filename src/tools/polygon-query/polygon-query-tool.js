@@ -126,10 +126,6 @@ export function createPolygonQueryTool({ map, runner, store, maxVertices = 500 }
     if (model.state === 'complete' || model.state === 'editing') return;
     const coordinate = coordinateFromEvent(event);
     if (!coordinate) return;
-    if (model.vertices.length >= maxVertices) {
-      render(`O limite de ${maxVertices} vértices foi atingido. Conclua ou desfaça o desenho.`);
-      return;
-    }
     if (model.vertices.length >= 3) {
       const firstPoint = map.project(model.vertices[0]);
       const distance = Math.hypot(event.point.x - firstPoint.x, event.point.y - firstPoint.y);
@@ -137,6 +133,10 @@ export function createPolygonQueryTool({ map, runner, store, maxVertices = 500 }
         finish();
         return;
       }
+    }
+    if (model.vertices.length >= maxVertices) {
+      render(`O limite de ${maxVertices} vértices foi atingido. Conclua ou desfaça o desenho.`);
+      return;
     }
     const result = model.add(coordinate);
     preview = null;
