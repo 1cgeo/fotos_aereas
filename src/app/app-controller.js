@@ -41,6 +41,8 @@ export async function initializeApplication({ config, store, ui, themeController
   let panelView = 'projects';
   let sidebarContext = null;
   let selectedResultKey = null;
+  let revealedQueryId = null;
+  let revealedProjectIds = new Set();
   const registry = createAnalysisRegistry();
   registry.register(pointIntersectionAnalysis);
   registry.register(polygonIntersectionAnalysis);
@@ -57,12 +59,43 @@ export async function initializeApplication({ config, store, ui, themeController
 
   function clearQuery() {
     selectedResultKey = null;
+    revealedQueryId = null;
     runner.clear();
     downloads.reset();
     pointTool.clearGeometry();
     polygonTool.clearGeometry();
+    hideRevealedProjects();
     clearResultHighlight(map);
     panelView = 'projects';
+  }
+
+  function hideRevealedProjects() {
+    const { activeIds } = store.getState().projects;
+    for (const projectId of revealedProjectIds) {
+      if (!activeIds.has(projectId)) setProjectVisibility(map, projectId, false);
+    }
+    revealedProjectIds = new Set();
+  }
+
+  function revealIntersectedProjects(state) {
+    const { activeIds } = state.projects;
+    const intersectedIds = new Set(state.query.results.map((result) => result.projectId));
+    for (const projectId of revealedProjectIds) {
+      if (!intersectedIds.has(projectId) && !activeIds.has(projectId)) {
+        setProjectVisibility(map, projectId, false);
+      }
+    }
+    const nextRevealed = new Set();
+    for (const projectId of intersectedIds) {
+      if (activeIds.has(projectId)) continue;
+      const project = config.projects.find((item) => item.id === projectId);
+      const data = state.projects.dataById.get(projectId);
+      if (!project || !data) continue;
+      ensureProjectLayers(map, project, data);
+      setProjectVisibility(map, projectId, true);
+      nextRevealed.add(projectId);
+    }
+    revealedProjectIds = nextRevealed;
   }
 
   function restoreSelectedHighlight() {
@@ -96,7 +129,10 @@ export async function initializeApplication({ config, store, ui, themeController
   }
 
   const toolbar = createQueryToolbar(ui.toolbar, ui.scope, {
-    onActivate: (toolId) => toolManager.activate(toolId),
+    onActivate: (toolId) => {
+      if (toolManager.getActiveTool()?.id !== toolId) clearQuery();
+      toolManager.activate(toolId);
+    },
     onDeactivate: () => toolManager.deactivate('chip'),
     onClear: clearQuery
   });
@@ -203,6 +239,10 @@ export async function initializeApplication({ config, store, ui, themeController
     if (state.query.status === 'idle' || state.query.status === 'loading-projects') {
       selectedResultKey = null;
       clearResultHighlight(map);
+    }
+    if ((state.query.status === 'ready' || state.query.status === 'partial') && state.query.queryId !== revealedQueryId) {
+      revealedQueryId = state.query.queryId;
+      revealIntersectedProjects(state);
     }
     updateScope();
     toolbar.update(state);

@@ -450,6 +450,7 @@
 }
 
 .active-tool-chip__close {
+  position: relative;
   display: grid;
   width: 1.75rem;
   height: 1.75rem;
@@ -459,7 +460,27 @@
   border-radius: 50%;
   background: color-mix(in srgb, var(--color-primary) 18%, transparent);
   color: var(--color-primary-soft-text);
-  font-size: 1.2rem;
+  font-size: 0;
+}
+
+.active-tool-chip__close::before,
+.active-tool-chip__close::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.85rem;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  content: '';
+}
+
+.active-tool-chip__close::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.active-tool-chip__close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .drawing-controls {

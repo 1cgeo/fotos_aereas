@@ -41,7 +41,7 @@ export async function createMap(container, config) {
     maxZoom: initialView.maxZoom,
     attributionControl: false,
     hash: false,
-    cooperativeGestures: true
+    cooperativeGestures: false
   });
 
   map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: true }), 'top-right');
