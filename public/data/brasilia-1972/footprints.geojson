@@ -1,0 +1,77 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "1972-101",
+      "properties": {
+        "photoId": "1972-101",
+        "photoNumber": "101",
+        "title": "Fotografia 101",
+        "flightLine": "F-11",
+        "capturedAt": "1972-06-10",
+        "nominalScale": "1:18.000",
+        "thumbnailUrl": "./thumbnails/foto-101.svg",
+        "downloadUrl": "./originals/foto-101.svg",
+        "downloadFilename": "brasilia_1972_foto_101.svg",
+        "mimeType": "image/svg+xml",
+        "sizeBytes": 2560,
+        "licenseLabel": "Dados de demonstração — uso livre",
+        "notes": "Sobrepõe duas fotografias do projeto de 1958."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-47.92, -15.81], [-47.85, -15.81], [-47.85, -15.74], [-47.92, -15.74], [-47.92, -15.81]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "1972-102",
+      "properties": {
+        "photoId": "1972-102",
+        "photoNumber": "102",
+        "title": "Fotografia 102",
+        "flightLine": "F-11",
+        "capturedAt": "1972-06-10",
+        "nominalScale": "1:18.000",
+        "thumbnailUrl": "./thumbnails/foto-102.svg",
+        "downloadUrl": "./originals/foto-102.svg",
+        "downloadFilename": "brasilia_1972_foto_102.svg",
+        "mimeType": "image/svg+xml",
+        "sizeBytes": 2688,
+        "licenseLabel": "Dados de demonstração — uso livre",
+        "notes": "Footprint leste."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-47.86, -15.78], [-47.79, -15.78], [-47.79, -15.71], [-47.86, -15.71], [-47.86, -15.78]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "1972-103",
+      "properties": {
+        "photoId": "1972-103",
+        "photoNumber": "103",
+        "title": "Fotografia 103",
+        "flightLine": "F-12",
+        "capturedAt": "1972-06-22",
+        "nominalScale": "1:18.000",
+        "thumbnailUrl": "./thumbnails/foto-103.svg",
+        "downloadUrl": "./originals/foto-103.svg",
+        "downloadFilename": "brasilia_1972_foto_103.svg",
+        "mimeType": "image/svg+xml",
+        "sizeBytes": 2816,
+        "licenseLabel": "Dados de demonstração — uso livre",
+        "notes": "Exemplo de fotografia representada por MultiPolygon."
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [[[-47.84, -15.84], [-47.80, -15.84], [-47.80, -15.80], [-47.84, -15.80], [-47.84, -15.84]]],
+          [[[-47.79, -15.74], [-47.77, -15.74], [-47.77, -15.72], [-47.79, -15.72], [-47.79, -15.74]]]
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="220" viewBox="0 0 320 220">
+  <rect width="320" height="220" fill="#bfdbfe"/>
+  <path d="M0 50L320 16M0 124L320 90M0 196L320 164" stroke="#3b82f6" stroke-width="12" opacity=".28"/>
+  <path d="M30 0L82 220M154 0L202 220M270 0L312 220" stroke="#eff6ff" stroke-width="5"/>
+  <path d="M128 76L194 110L132 150Z" fill="none" stroke="#1e40af" stroke-width="5"/>
+  <text x="16" y="204" fill="#172554" font-family="sans-serif" font-size="20" font-weight="700">1972 · FOTO 103</text>
+</svg>

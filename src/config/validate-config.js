@@ -38,6 +38,18 @@ function normalizeProject(project, index, configUrl, ids) {
   assertObject(project.data, `projects[${index}].data`);
   const color = project.style?.color || '#2563eb';
   if (!HEX_COLOR_PATTERN.test(color)) throw new Error(`Cor inválida no projeto ${id}.`);
+  const license = project.license
+    ? Object.freeze({
+        label: assertString(project.license.label, `projects[${index}].license.label`, 200),
+        url: project.license.url ? resolvePublicUrl(project.license.url, configUrl, 'link').href : null
+      })
+    : null;
+  const links = Array.isArray(project.links)
+    ? project.links.map((link, linkIndex) => ({
+        label: assertString(link.label, `projects[${index}].links[${linkIndex}].label`, 120),
+        url: resolvePublicUrl(link.url, configUrl, 'link').href
+      }))
+    : [];
 
   return Object.freeze({
     ...project,
@@ -54,13 +66,19 @@ function normalizeProject(project, index, configUrl, ids) {
         )
       : [],
     extent: Object.freeze([...project.extent]),
+    license,
+    links: Object.freeze(links),
     data: Object.freeze({
       footprintsUrl: resolvePublicUrl(project.data.footprintsUrl, configUrl, 'geojson').href
     }),
     style: Object.freeze({
       color,
-      fillOpacity: Number.isFinite(project.style?.fillOpacity) ? project.style.fillOpacity : 0.12,
-      lineOpacity: Number.isFinite(project.style?.lineOpacity) ? project.style.lineOpacity : 0.8
+      fillOpacity: Number.isFinite(project.style?.fillOpacity)
+        ? Math.max(0, Math.min(1, project.style.fillOpacity))
+        : 0.12,
+      lineOpacity: Number.isFinite(project.style?.lineOpacity)
+        ? Math.max(0, Math.min(1, project.style.lineOpacity))
+        : 0.8
     })
   });
 }
@@ -107,6 +125,12 @@ export function normalizeConfig(rawConfig, configUrl) {
       shortTitle: assertString(rawConfig.site.shortTitle || rawConfig.site.title, 'site.shortTitle', 80),
       description: assertString(rawConfig.site.description, 'site.description', 500),
       locale: rawConfig.site.locale || 'pt-BR',
+      contact: rawConfig.site.contact
+        ? Object.freeze({
+            label: assertString(rawConfig.site.contact.label, 'site.contact.label', 120),
+            url: resolvePublicUrl(rawConfig.site.contact.url, configUrl, 'contact').href
+          })
+        : null,
       initialView: Object.freeze({
         center: Object.freeze(center),
         zoom: Number.isFinite(initialView.zoom) ? initialView.zoom : 4,
@@ -125,4 +149,3 @@ export function normalizeConfig(rawConfig, configUrl) {
     projects: Object.freeze(projects)
   });
 }
-

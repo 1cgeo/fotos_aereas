@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="220" viewBox="0 0 320 220">
+  <rect width="320" height="220" fill="#e7e5e4"/>
+  <path d="M-20 54L340 26M-20 130L340 94M-20 202L340 168" stroke="#57534e" stroke-width="11" opacity=".42"/>
+  <path d="M34 0L76 220M148 0L188 220M260 0L300 220" stroke="#a8a29e" stroke-width="5"/>
+  <rect x="126" y="74" width="70" height="58" fill="none" stroke="#292524" stroke-width="5"/>
+  <text x="16" y="204" fill="#1c1917" font-family="sans-serif" font-size="20" font-weight="700">1958 · FOTO 002</text>
+</svg>

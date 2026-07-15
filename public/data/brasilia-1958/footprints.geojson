@@ -1,0 +1,74 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "1958-001",
+      "properties": {
+        "photoId": "1958-001",
+        "photoNumber": "001",
+        "title": "Fotografia 001",
+        "flightLine": "FX-01",
+        "capturedAt": "1958-08-04",
+        "nominalScale": "1:25.000",
+        "thumbnailUrl": "./thumbnails/foto-001.svg",
+        "downloadUrl": "./originals/foto-001.svg",
+        "downloadFilename": "brasilia_1958_foto_001.svg",
+        "mimeType": "image/svg+xml",
+        "sizeBytes": 2048,
+        "licenseLabel": "Dados de demonstração — uso livre",
+        "notes": "Footprint oeste; sobrepõe a foto 002."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-47.94, -15.80], [-47.87, -15.80], [-47.87, -15.73], [-47.94, -15.73], [-47.94, -15.80]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "1958-002",
+      "properties": {
+        "photoId": "1958-002",
+        "photoNumber": "002",
+        "title": "Fotografia 002",
+        "flightLine": "FX-01",
+        "capturedAt": "1958-08-04",
+        "nominalScale": "1:25.000",
+        "thumbnailUrl": "./thumbnails/foto-002.svg",
+        "downloadUrl": "./originals/foto-002.svg",
+        "downloadFilename": "brasilia_1958_foto_002.svg",
+        "mimeType": "image/svg+xml",
+        "sizeBytes": 2304,
+        "licenseLabel": "Dados de demonstração — uso livre",
+        "notes": "Footprint central; sobrepõe as fotos 001 e 003."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-47.90, -15.80], [-47.83, -15.80], [-47.83, -15.73], [-47.90, -15.73], [-47.90, -15.80]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "1958-003",
+      "properties": {
+        "photoId": "1958-003",
+        "photoNumber": "003",
+        "title": "Fotografia 003",
+        "flightLine": "FX-02",
+        "capturedAt": "1958-08-18",
+        "nominalScale": "1:25.000",
+        "thumbnailUrl": "./thumbnails/foto-003.svg",
+        "downloadUrl": "./originals/foto-003.svg",
+        "downloadFilename": "brasilia_1958_foto_003.svg",
+        "mimeType": "image/svg+xml",
+        "sizeBytes": 2176,
+        "licenseLabel": "Dados de demonstração — uso livre",
+        "notes": "Footprint sudeste."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-47.88, -15.83], [-47.81, -15.83], [-47.81, -15.76], [-47.88, -15.76], [-47.88, -15.83]]]
+      }
+    }
+  ]
+}
