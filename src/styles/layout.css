@@ -10,14 +10,15 @@
   z-index: 20;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   padding: 0 1.25rem;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
-  justify-content: space-between;
-  gap: 1rem;
 }
 
 .app-main {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(19rem, var(--sidebar-width)) minmax(0, 1fr);
   min-height: 0;
@@ -26,8 +27,10 @@
 .sidebar {
   position: relative;
   z-index: 10;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   border-right: 1px solid var(--color-border);
   background: var(--color-surface);
   box-shadow: var(--shadow-panel);
@@ -39,7 +42,17 @@
 }
 
 .sidebar__header {
+  position: relative;
+  z-index: 1;
   border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.sidebar__content {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .workspace {
@@ -70,13 +83,15 @@
   left: 1rem;
 }
 
-@media (max-width: 760px) {
-  .app-header {
-    padding: 0 0.75rem;
+@media (max-width: 1100px) and (min-width: 901px) {
+  :root {
+    --sidebar-width: 21.5rem;
   }
+}
 
-  .app-kicker {
-    display: none;
+@media (max-width: 900px) {
+  .app-header {
+    padding: 0 0.9rem;
   }
 
   .app-main {
@@ -87,16 +102,67 @@
     position: absolute;
     z-index: 15;
     right: 0.75rem;
-    bottom: 0.75rem;
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
     left: 0.75rem;
-    max-height: 42%;
+    max-height: min(46vh, 32rem);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
+    transition: max-height 180ms ease;
+  }
+
+  .sidebar--collapsed {
+    max-height: 4.25rem;
+  }
+
+  .sidebar--collapsed .sidebar__description,
+  .sidebar--collapsed .sidebar__content {
+    display: none;
+  }
+
+  .sidebar__header {
+    padding: 0.9rem 1rem;
+  }
+
+  .sidebar__content {
+    padding: 1rem;
+  }
+
+  .map-toolbar {
+    top: 0.75rem;
+    left: 0.75rem;
+    max-width: calc(100% - 5rem);
+  }
+}
+
+@media (max-width: 620px) {
+  :root {
+    --header-height: 4.25rem;
+  }
+
+  .app-header {
+    gap: 0.5rem;
+    padding: 0 0.65rem;
+  }
+
+  .app-kicker,
+  .app-title__long {
+    display: none;
+  }
+
+  .app-title__short {
+    display: inline;
+  }
+
+  .sidebar {
+    right: 0.5rem;
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+    left: 0.5rem;
   }
 
   .map-toolbar {
     top: 0.5rem;
     left: 0.5rem;
-    max-width: calc(100% - 1rem);
+    width: calc(100% - 4.5rem);
+    max-width: none;
   }
 }

@@ -1,17 +1,25 @@
-function button(label, className = 'tool-button') {
+function button(label, className = 'tool-button', shortLabel = label) {
   const node = document.createElement('button');
   node.type = 'button';
   node.className = className;
-  node.textContent = label;
+  node.setAttribute('aria-label', label);
+  node.title = label;
+  const long = document.createElement('span');
+  long.className = 'tool-button__label tool-button__label--long';
+  long.textContent = label;
+  const short = document.createElement('span');
+  short.className = 'tool-button__label tool-button__label--short';
+  short.textContent = shortLabel;
+  node.append(long, short);
   return node;
 }
 
 export function createQueryToolbar(container, scopeElement, handlers) {
   const tools = document.createElement('div');
   tools.className = 'tool-buttons';
-  const pointButton = button('Consultar ponto');
-  const polygonButton = button('Desenhar área');
-  const clearButton = button('Limpar consulta', 'tool-button tool-button--quiet');
+  const pointButton = button('Consultar ponto', 'tool-button', 'Ponto');
+  const polygonButton = button('Desenhar área', 'tool-button', 'Área');
+  const clearButton = button('Limpar consulta', 'tool-button tool-button--quiet', 'Limpar');
   pointButton.addEventListener('click', () => handlers.onActivate('point-query'));
   polygonButton.addEventListener('click', () => {
     if (!polygonButton.disabled) handlers.onActivate('polygon-query');
@@ -23,7 +31,10 @@ export function createQueryToolbar(container, scopeElement, handlers) {
   activeChip.className = 'active-tool-chip';
   activeChip.hidden = true;
   const activeLabel = document.createElement('span');
-  const deactivateButton = button('×', 'active-tool-chip__close');
+  const deactivateButton = document.createElement('button');
+  deactivateButton.type = 'button';
+  deactivateButton.className = 'active-tool-chip__close';
+  deactivateButton.textContent = '×';
   deactivateButton.setAttribute('aria-label', 'Desativar ferramenta');
   deactivateButton.title = 'Desativar ferramenta';
   deactivateButton.addEventListener('click', handlers.onDeactivate);

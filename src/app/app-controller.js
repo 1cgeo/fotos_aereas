@@ -26,8 +26,19 @@ export async function initializeApplication({ config, store, ui, themeController
   const repository = createProjectRepository(config);
   const map = await createMap(ui.map, config);
   const unsubscribeTheme = themeController?.subscribe((theme) => applyMapTheme(map, theme));
+  let sidebarResizeTimer = null;
+  const unsubscribeSidebar = ui.subscribeSidebarToggle?.(() => {
+    map.resize();
+    if (sidebarResizeTimer !== null) window.clearTimeout(sidebarResizeTimer);
+    sidebarResizeTimer = window.setTimeout(() => {
+      map.resize();
+      map.triggerRepaint();
+      sidebarResizeTimer = null;
+    }, 200);
+  });
   setMapReady(store, true);
   let panelView = 'projects';
+  let sidebarContext = null;
   const registry = createAnalysisRegistry();
   registry.register(pointIntersectionAnalysis);
   registry.register(polygonIntersectionAnalysis);
@@ -67,6 +78,13 @@ export async function initializeApplication({ config, store, ui, themeController
   function renderPanel() {
     const state = store.getState();
     if (state.query.status !== 'idle') {
+      if (sidebarContext !== 'query') ui.setSidebarCollapsed?.(false);
+      sidebarContext = 'query';
+      const resultCount = state.query.results.length;
+      const description = state.query.status === 'loading-projects' || state.query.status === 'running'
+        ? 'Buscando fotografias nas grades do escopo atual.'
+        : `${resultCount} ${resultCount === 1 ? 'fotografia encontrada' : 'fotografias encontradas'}.`;
+      ui.setSidebarHeader?.('Resultados da consulta', description);
       renderQueryPanel(ui.sidebarContent, state.query, state.downloads, {
         onClear: clearQuery,
         onCancel: () => runner.cancel(),
@@ -80,6 +98,9 @@ export async function initializeApplication({ config, store, ui, themeController
     if (panelView === 'details' && state.projects.selectedId) {
       const project = config.projects.find((item) => item.id === state.projects.selectedId);
       if (project) {
+        if (sidebarContext !== 'details') ui.setSidebarCollapsed?.(false);
+        sidebarContext = 'details';
+        ui.setSidebarHeader?.('Detalhes do voo', project.period?.display || 'Informações do aerolevantamento');
         renderProjectDetails(ui.sidebarContent, project, state.projects.activeIds.has(project.id), {
           onBack: () => {
             panelView = 'projects';
@@ -91,6 +112,8 @@ export async function initializeApplication({ config, store, ui, themeController
         return;
       }
     }
+    sidebarContext = 'projects';
+    ui.setSidebarHeader?.('Aerolevantamentos', config.site.description);
     renderProjectsView(ui.sidebarContent, config, state, {
       onToggle: toggleProject,
       onDetails: (projectId) => {
@@ -173,6 +196,8 @@ export async function initializeApplication({ config, store, ui, themeController
     destroy() {
       unsubscribe();
       unsubscribeTheme?.();
+      unsubscribeSidebar?.();
+      if (sidebarResizeTimer !== null) window.clearTimeout(sidebarResizeTimer);
       ui.destroy?.();
       document.removeEventListener('keydown', handleKeyDown);
       toolManager.destroy();

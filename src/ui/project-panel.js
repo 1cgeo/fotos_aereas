@@ -22,14 +22,18 @@ export function renderProjectsView(container, config, state, handlers) {
     const loadState = state.projects.loadStateById.get(project.id);
     const card = element('article', 'project-card');
     card.dataset.projectId = project.id;
+    card.dataset.active = String(active);
+    card.style.setProperty('--project-color', project.style.color);
+    card.setAttribute('aria-busy', String(loadState?.status === 'loading'));
 
     const top = element('div', 'project-card__top');
-    const titleGroup = element('div');
+    const titleGroup = element('div', 'project-card__heading');
     const title = element('h3', 'project-card__title', project.title);
     const period = element('p', 'project-card__period', project.period?.display || 'Período não informado');
     titleGroup.append(title, period);
 
     const switchLabel = element('label', 'project-switch');
+    switchLabel.title = active ? 'Desligar grade no mapa' : 'Ligar grade no mapa';
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = active;
@@ -43,8 +47,12 @@ export function renderProjectsView(container, config, state, handlers) {
 
     const summary = element('p', 'project-card__summary', project.summary);
     const footer = element('div', 'project-card__footer');
-    const status = element('span', `project-status project-status--${loadState?.status || 'idle'}`, loadLabel(loadState, active));
-    const details = element('button', 'button-link', 'Ver detalhes');
+    const statusName = loadState?.status === 'error' ? 'error' : active ? 'active' : loadState?.status || 'idle';
+    const status = element('span', `project-status project-status--${statusName}`);
+    const statusDot = element('span', 'project-status__dot');
+    statusDot.setAttribute('aria-hidden', 'true');
+    status.append(statusDot, element('span', null, loadLabel(loadState, active)));
+    const details = element('button', 'button-link project-card__details', 'Ver detalhes →');
     details.type = 'button';
     details.addEventListener('click', () => handlers.onDetails(project.id));
     footer.append(status, details);
@@ -76,6 +84,7 @@ export function renderProjectDetails(container, project, active, handlers) {
   back.addEventListener('click', handlers.onBack);
 
   const article = element('article', 'project-details');
+  article.style.setProperty('--project-color', project.style.color);
   article.append(
     element('p', 'project-details__eyebrow', project.period?.display || 'Período não informado'),
     element('h3', 'project-details__title', project.title),
@@ -83,10 +92,12 @@ export function renderProjectDetails(container, project, active, handlers) {
   );
   for (const paragraph of project.description) article.append(element('p', null, paragraph));
 
-  const toggle = element('button', 'button button--secondary', active ? 'Ocultar grade' : 'Mostrar grade');
+  const actions = element('div', 'project-details__actions');
+  const toggle = element('button', 'button button--secondary', active ? 'Desligar grade do mapa' : 'Ligar grade no mapa');
   toggle.type = 'button';
   toggle.addEventListener('click', () => handlers.onToggle(project.id, !active));
-  article.append(toggle);
+  actions.append(toggle);
+  article.append(actions, element('h4', 'project-details__section-title', 'Ficha do aerolevantamento'));
 
   const details = element('dl', 'project-definition-list');
   addDetailRow(details, 'Instituição', project.institution);
@@ -100,6 +111,17 @@ export function renderProjectDetails(container, project, active, handlers) {
   addDetailRow(details, 'Licença', project.license?.label);
   article.append(details);
 
-  if (project.credits) article.append(element('p', 'project-details__credits', project.credits));
+  if (project.download?.instructions) {
+    article.append(
+      element('h4', 'project-details__section-title', 'Downloads'),
+      element('p', 'project-details__credits', project.download.instructions)
+    );
+  }
+  if (project.credits) {
+    article.append(
+      element('h4', 'project-details__section-title', 'Créditos'),
+      element('p', 'project-details__credits', project.credits)
+    );
+  }
   container.replaceChildren(back, article);
 }

@@ -24,7 +24,7 @@ describe('painel de resultados', () => {
     expect(container.textContent).toContain('2.0 KB');
     const card = container.querySelector('.query-result-card');
     card.dispatchEvent(new Event('mouseenter'));
-    card.dispatchEvent(new Event('focus'));
+    card.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
     expect(handlers.onHighlight).toHaveBeenCalledTimes(2);
     const link = container.querySelector('a[download]');
     expect(link.getAttribute('download')).toBe('photo.tif');

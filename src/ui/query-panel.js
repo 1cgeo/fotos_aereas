@@ -14,12 +14,14 @@ function formatBytes(value) {
 
 function resultCard(result, handlers) {
   const item = element('li', 'query-result-card');
-  item.tabIndex = 0;
   item.addEventListener('mouseenter', () => handlers.onHighlight(result));
   item.addEventListener('mouseleave', handlers.onClearHighlight);
-  item.addEventListener('focus', () => handlers.onHighlight(result));
-  item.addEventListener('blur', handlers.onClearHighlight);
+  item.addEventListener('focusin', () => handlers.onHighlight(result));
+  item.addEventListener('focusout', (event) => {
+    if (!item.contains(event.relatedTarget)) handlers.onClearHighlight();
+  });
 
+  const media = element('div', 'query-result-card__media');
   const thumbnail = document.createElement('img');
   thumbnail.className = 'query-result-card__thumbnail';
   thumbnail.src = result.thumbnailUrl;
@@ -27,13 +29,17 @@ function resultCard(result, handlers) {
   thumbnail.loading = 'lazy';
   thumbnail.decoding = 'async';
   thumbnail.referrerPolicy = 'no-referrer';
+  const fallback = element('span', 'query-result-card__fallback', 'Sem miniatura');
+  fallback.hidden = true;
   thumbnail.addEventListener('error', () => {
     thumbnail.hidden = true;
+    fallback.hidden = false;
   });
+  media.append(thumbnail, fallback);
 
   const body = element('div', 'query-result-card__body');
   body.append(
-    element('strong', 'query-result-card__title', result.title),
+    element('h4', 'query-result-card__title', result.title),
     element('span', 'query-result-card__project', result.projectTitle)
   );
   const metadata = element('dl', 'query-result-card__metadata');
@@ -56,7 +62,7 @@ function resultCard(result, handlers) {
   download.referrerPolicy = 'no-referrer';
   download.addEventListener('click', () => handlers.onDownload?.(result));
   body.append(download);
-  item.append(thumbnail, body);
+  item.append(media, body);
   return item;
 }
 
@@ -65,7 +71,10 @@ function downloadWorkflow(downloads, handlers) {
   section.setAttribute('aria-live', 'polite');
   if (downloads.reportStatus === 'generating') {
     section.setAttribute('aria-busy', 'true');
-    section.append(element('p', null, 'Gerando o PDF de conferência…'));
+    section.append(
+      element('span', 'download-workflow__step', 'Etapa 1 de 2'),
+      element('p', null, 'Gerando o PDF de conferência…')
+    );
     return section;
   }
   if (downloads.reportStatus === 'error') {
@@ -80,7 +89,10 @@ function downloadWorkflow(downloads, handlers) {
 
   const total = downloads.items.length;
   const current = downloads.currentIndex;
-  section.append(element('p', 'download-workflow__report', 'PDF gerado. Baixe agora cada fotografia individualmente.'));
+  section.append(
+    element('span', 'download-workflow__step', 'Etapa 2 de 2'),
+    element('p', 'download-workflow__report', 'PDF gerado. Baixe agora cada fotografia individualmente.')
+  );
   if (current < total) {
     const next = downloads.items[current];
     const button = element('button', 'button button--primary', `Baixar próxima (${current + 1} de ${total})`);
@@ -99,7 +111,8 @@ function resultList(query, handlers) {
   for (const result of query.results) {
     if (result.projectId !== lastProjectId) {
       const heading = element('li', 'query-result-group', result.projectTitle);
-      heading.setAttribute('aria-hidden', 'true');
+      heading.setAttribute('role', 'heading');
+      heading.setAttribute('aria-level', '4');
       list.append(heading);
       lastProjectId = result.projectId;
     }
@@ -113,8 +126,7 @@ export function renderQueryPanel(container, query, downloads, handlers) {
   const back = element('button', 'button-link button-link--back', '← Voltar aos projetos');
   back.type = 'button';
   back.addEventListener('click', handlers.onClear);
-  const title = element('h3', 'query-panel__title', 'Resultado da consulta');
-  header.append(back, title);
+  header.append(back);
 
   const content = element('div', 'query-panel__content');
   if (query.status === 'loading-projects' || query.status === 'running') {
@@ -125,6 +137,12 @@ export function renderQueryPanel(container, query, downloads, handlers) {
       element('p', 'query-progress__label', stage),
       element('p', 'query-progress__value', `${progress?.current || 0} de ${progress?.total || 0}`)
     );
+    const progressBar = document.createElement('progress');
+    progressBar.className = 'query-progress__bar';
+    progressBar.max = Math.max(1, progress?.total || 1);
+    progressBar.value = progress?.current || 0;
+    progressBar.setAttribute('aria-label', stage);
+    content.append(progressBar);
     const cancel = element('button', 'button button--secondary', 'Cancelar consulta');
     cancel.type = 'button';
     cancel.addEventListener('click', handlers.onCancel);
@@ -134,11 +152,12 @@ export function renderQueryPanel(container, query, downloads, handlers) {
   } else if (query.status === 'error') {
     content.append(element('p', 'inline-error', 'Não foi possível concluir a consulta.'));
   } else {
-    content.append(element(
-      'p',
-      'query-summary',
-      `${query.results.length} ${query.results.length === 1 ? 'fotografia encontrada' : 'fotografias encontradas'}.`
-    ));
+    const summary = element('div', 'query-summary');
+    summary.append(
+      element('strong', 'query-summary__count', String(query.results.length)),
+      element('span', 'query-summary__label', query.results.length === 1 ? 'fotografia encontrada' : 'fotografias encontradas')
+    );
+    content.append(summary);
     if (query.projectErrors.length > 0) {
       content.append(element('p', 'query-warning', `${query.projectErrors.length} projeto(s) não puderam ser consultados.`));
     }
@@ -149,7 +168,8 @@ export function renderQueryPanel(container, query, downloads, handlers) {
       all.type = 'button';
       all.disabled = downloads.reportStatus === 'generating';
       all.addEventListener('click', handlers.onDownloadAll);
-      content.append(all, downloadWorkflow(downloads, handlers), resultList(query, handlers));
+      const downloadHint = element('p', 'query-download-hint', 'Gera primeiro um PDF de conferência e depois libera as imagens uma a uma.');
+      content.append(all, downloadHint, downloadWorkflow(downloads, handlers), resultList(query, handlers));
     }
   }
 

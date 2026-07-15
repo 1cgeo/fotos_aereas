@@ -65,10 +65,16 @@ export function renderAppShell(root, config, { themeController }) {
 
   const header = createElement('header', 'app-header');
   const identity = createElement('div', 'app-identity');
-  identity.append(
-    createElement('span', 'app-kicker', 'Acervo cartográfico'),
-    createElement('h1', 'app-title', config.site.title)
+  const mark = createElement('span', 'app-mark');
+  mark.setAttribute('aria-hidden', 'true');
+  const identityText = createElement('div', 'app-identity__text');
+  const appTitle = createElement('h1', 'app-title');
+  appTitle.append(
+    createElement('span', 'app-title__long', config.site.title),
+    createElement('span', 'app-title__short', config.site.shortTitle)
   );
+  identityText.append(createElement('span', 'app-kicker', 'Acervo cartográfico'), appTitle);
+  identity.append(mark, identityText);
   const themeSelector = createThemeSelector(themeController);
   header.append(identity, themeSelector.element);
 
@@ -76,11 +82,20 @@ export function renderAppShell(root, config, { themeController }) {
   const sidebar = createElement('aside', 'sidebar');
   sidebar.setAttribute('aria-label', 'Projetos e resultados');
   const sidebarHeader = createElement('div', 'sidebar__header');
-  sidebarHeader.append(
-    createElement('h2', 'sidebar__title', 'Aerolevantamentos'),
-    createElement('p', 'sidebar__description', config.site.description)
-  );
+  const sidebarHeadingRow = createElement('div', 'sidebar__heading-row');
+  const sidebarTitle = createElement('h2', 'sidebar__title', 'Aerolevantamentos');
+  const collapseButton = createElement('button', 'sidebar__collapse');
+  collapseButton.type = 'button';
+  collapseButton.setAttribute('aria-expanded', 'true');
+  collapseButton.setAttribute('aria-controls', 'sidebar-content');
+  const collapseIcon = createElement('span', 'sidebar__collapse-icon', '⌄');
+  collapseIcon.setAttribute('aria-hidden', 'true');
+  collapseButton.append(collapseIcon);
+  sidebarHeadingRow.append(sidebarTitle, collapseButton);
+  const sidebarDescription = createElement('p', 'sidebar__description', config.site.description);
+  sidebarHeader.append(sidebarHeadingRow, sidebarDescription);
   const sidebarContent = createElement('div', 'sidebar__content');
+  sidebarContent.id = 'sidebar-content';
   const emptyCatalog = createElement(
     'p',
     'empty-state',
@@ -107,11 +122,39 @@ export function renderAppShell(root, config, { themeController }) {
   main.append(sidebar, workspace);
   app.append(header, main);
   root.replaceChildren(app);
+  root.removeAttribute('aria-live');
   document.title = config.site.title;
+
+  let sidebarCollapsed = false;
+  const sidebarListeners = new Set();
+  function setSidebarCollapsed(collapsed) {
+    sidebarCollapsed = Boolean(collapsed);
+    sidebar.classList.toggle('sidebar--collapsed', sidebarCollapsed);
+    app.classList.toggle('app-shell--sidebar-collapsed', sidebarCollapsed);
+    collapseButton.setAttribute('aria-expanded', String(!sidebarCollapsed));
+    collapseButton.setAttribute('aria-label', sidebarCollapsed ? 'Expandir painel' : 'Recolher painel');
+    collapseIcon.textContent = sidebarCollapsed ? '⌃' : '⌄';
+    for (const listener of sidebarListeners) listener(sidebarCollapsed);
+  }
+  collapseButton.addEventListener('click', () => setSidebarCollapsed(!sidebarCollapsed));
+  setSidebarCollapsed(false);
 
   return Object.freeze({
     app, header, main, sidebar, sidebarContent, workspace, toolbar, scope, map,
+    setSidebarHeader(title, description) {
+      sidebarTitle.textContent = title;
+      sidebarDescription.textContent = description;
+    },
+    setSidebarCollapsed,
+    getSidebarCollapsed() {
+      return sidebarCollapsed;
+    },
+    subscribeSidebarToggle(listener) {
+      sidebarListeners.add(listener);
+      return () => sidebarListeners.delete(listener);
+    },
     destroy() {
+      sidebarListeners.clear();
       themeSelector.destroy();
     }
   });

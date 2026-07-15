@@ -33,7 +33,7 @@ async function clickCoordinate(page, coordinate) {
 test('consulta sobreposição por ponto e destaca um resultado', async ({ page }) => {
   await page.getByRole('button', { name: 'Consultar ponto' }).click();
   await clickCoordinate(page, [-47.89, -15.75]);
-  await expect(page.getByText(/fotografias encontradas/)).toBeVisible();
+  await expect(page.locator('.query-summary__label')).toBeVisible();
   const cards = page.locator('.query-result-card');
   await expect(cards).toHaveCount(2);
   await cards.first().hover();
@@ -51,7 +51,7 @@ test('desenha polígono customizado e prepara a fila após o PDF', async ({ page
   await clickCoordinate(page, [-47.84, -15.74]);
   await clickCoordinate(page, [-47.91, -15.74]);
   await page.getByRole('button', { name: 'Concluir área' }).click();
-  await expect(page.getByText(/fotografias encontradas/)).toBeVisible();
+  await expect(page.locator('.query-summary__label')).toBeVisible();
 
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Preparar download de todas' }).click();
@@ -65,16 +65,23 @@ test('consulta todos os projetos quando nenhum está ligado', async ({ page }) =
   await expect(page.getByText('Escopo: todos os projetos')).toBeVisible();
   await page.getByRole('button', { name: 'Consultar ponto' }).click();
   await clickCoordinate(page, [-47.89, -15.75]);
-  await expect(page.getByText(/fotografias encontradas/)).toBeVisible();
+  await expect(page.locator('.query-summary__label')).toBeVisible();
   await expect(page.locator('.query-result-group')).toHaveCount(2);
 });
 
 test('mantém ferramentas e desenho utilizáveis em tela estreita', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole('heading', { name: 'Fotos Aéreas' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Consultar ponto' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Desenhar área' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Limpar consulta' })).toBeVisible();
   const canvasBox = await page.locator('.maplibregl-canvas').boundingBox();
   expect(canvasBox.height).toBeGreaterThan(700);
+  await page.getByRole('button', { name: 'Recolher painel' }).click();
+  await expect(page.locator('.app-shell')).toHaveClass(/app-shell--sidebar-collapsed/);
+  await expect(page.locator('.project-list')).not.toBeVisible();
+  await page.getByRole('button', { name: 'Expandir painel' }).click();
+  await expect(page.locator('.project-list')).toBeVisible();
   await page.getByRole('button', { name: 'Desenhar área' }).click();
   await expect(page.getByRole('group', { name: 'Controles do desenho' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Cancelar desenho' })).toBeVisible();
