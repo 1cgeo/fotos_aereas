@@ -11,10 +11,11 @@ export function createQueryToolbar(container, scopeElement, handlers) {
   tools.className = 'tool-buttons';
   const pointButton = button('Consultar ponto');
   const polygonButton = button('Desenhar área');
-  polygonButton.disabled = true;
-  polygonButton.title = 'Disponível na próxima fase';
   const clearButton = button('Limpar consulta', 'tool-button tool-button--quiet');
   pointButton.addEventListener('click', () => handlers.onActivate('point-query'));
+  polygonButton.addEventListener('click', () => {
+    if (!polygonButton.disabled) handlers.onActivate('polygon-query');
+  });
   clearButton.addEventListener('click', handlers.onClear);
   tools.append(pointButton, polygonButton, clearButton);
 
@@ -35,15 +36,18 @@ export function createQueryToolbar(container, scopeElement, handlers) {
       const activeId = state.tools.activeToolId;
       pointButton.setAttribute('aria-pressed', String(activeId === 'point-query'));
       pointButton.classList.toggle('tool-button--active', activeId === 'point-query');
+      polygonButton.setAttribute('aria-pressed', String(activeId === 'polygon-query'));
+      polygonButton.classList.toggle('tool-button--active', activeId === 'polygon-query');
       clearButton.disabled = state.query.status === 'idle';
       activeChip.hidden = !activeId;
-      activeLabel.textContent = activeId === 'point-query' ? 'Ferramenta ativa: Consultar ponto' : '';
+      activeLabel.textContent = activeId === 'point-query'
+        ? 'Ferramenta ativa: Consultar ponto'
+        : activeId === 'polygon-query' ? 'Ferramenta ativa: Desenhar área' : '';
     },
     setPolygonEnabled(enabled) {
       polygonButton.disabled = !enabled;
-      polygonButton.removeAttribute('title');
-      if (enabled) polygonButton.addEventListener('click', () => handlers.onActivate('polygon-query'), { once: false });
+      if (enabled) polygonButton.removeAttribute('title');
+      else polygonButton.title = 'Ferramenta indisponível';
     }
   });
 }
-

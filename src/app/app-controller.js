@@ -9,12 +9,14 @@ import { createProjectRepository } from '../data/project-repository.js';
 import { createAnalysisRegistry } from '../analysis/analysis-registry.js';
 import { createAnalysisRunner } from '../analysis/analysis-runner.js';
 import { pointIntersectionAnalysis } from '../analysis/point-intersection.analysis.js';
+import { polygonIntersectionAnalysis } from '../analysis/polygon-intersection.analysis.js';
 import { createMap } from '../map/create-map.js';
 import { ensureProjectLayers, setProjectVisibility } from '../map/project-layers.js';
 import { renderProjectDetails, renderProjectsView } from '../ui/project-panel.js';
 import { renderQueryPanel } from '../ui/query-panel.js';
 import { createQueryToolbar } from '../ui/query-toolbar.js';
 import { createPointQueryTool } from '../tools/point-query/point-query-tool.js';
+import { createPolygonQueryTool } from '../tools/polygon-query/polygon-query-tool.js';
 import { createToolManager } from '../tools/tool-manager.js';
 
 export async function initializeApplication({ config, store, ui }) {
@@ -24,15 +26,18 @@ export async function initializeApplication({ config, store, ui }) {
   let panelView = 'projects';
   const registry = createAnalysisRegistry();
   registry.register(pointIntersectionAnalysis);
+  registry.register(polygonIntersectionAnalysis);
   const runner = createAnalysisRunner({ config, store, repository, registry });
   const toolManager = createToolManager(store);
   const pointTool = toolManager.register(createPointQueryTool({ map, runner, store }));
+  const polygonTool = toolManager.register(createPolygonQueryTool({ map, runner, store }));
   const toolbar = createQueryToolbar(ui.toolbar, ui.scope, {
     onActivate: (toolId) => toolManager.activate(toolId),
     onDeactivate: () => toolManager.deactivate('chip'),
     onClear: () => {
       runner.clear();
       pointTool.clearGeometry();
+      polygonTool.clearGeometry();
       panelView = 'projects';
     }
   });
@@ -51,6 +56,7 @@ export async function initializeApplication({ config, store, ui }) {
         onClear: () => {
           runner.clear();
           pointTool.clearGeometry();
+          polygonTool.clearGeometry();
           panelView = 'projects';
         },
         onCancel: () => runner.cancel()
@@ -116,6 +122,7 @@ export async function initializeApplication({ config, store, ui }) {
   renderPanel();
   updateScope();
   toolbar.update(store.getState());
+  toolbar.setPolygonEnabled(true);
   const unsubscribe = store.subscribe((state) => {
     updateScope();
     toolbar.update(state);
@@ -123,6 +130,8 @@ export async function initializeApplication({ config, store, ui }) {
   });
 
   const handleKeyDown = (event) => {
+    const activeTool = toolManager.getActiveTool();
+    if (activeTool?.handleKeyDown?.(event)) return;
     if (event.key !== 'Escape') return;
     const status = store.getState().query.status;
     if (status === 'loading-projects' || status === 'running') runner.cancel();
