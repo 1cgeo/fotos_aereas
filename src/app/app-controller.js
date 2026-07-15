@@ -12,6 +12,8 @@ import { pointIntersectionAnalysis } from '../analysis/point-intersection.analys
 import { polygonIntersectionAnalysis } from '../analysis/polygon-intersection.analysis.js';
 import { createMap } from '../map/create-map.js';
 import { ensureProjectLayers, setProjectVisibility } from '../map/project-layers.js';
+import { clearResultHighlight, showResultHighlight } from '../map/result-highlight.js';
+import { createDownloadController } from '../downloads/download-controller.js';
 import { renderProjectDetails, renderProjectsView } from '../ui/project-panel.js';
 import { renderQueryPanel } from '../ui/query-panel.js';
 import { createQueryToolbar } from '../ui/query-toolbar.js';
@@ -28,18 +30,29 @@ export async function initializeApplication({ config, store, ui }) {
   registry.register(pointIntersectionAnalysis);
   registry.register(polygonIntersectionAnalysis);
   const runner = createAnalysisRunner({ config, store, repository, registry });
+  const downloads = createDownloadController({ config, store });
   const toolManager = createToolManager(store);
   const pointTool = toolManager.register(createPointQueryTool({ map, runner, store }));
-  const polygonTool = toolManager.register(createPolygonQueryTool({ map, runner, store }));
+  const polygonTool = toolManager.register(createPolygonQueryTool({
+    map,
+    runner,
+    store,
+    maxVertices: config.site.maxDrawingVertices
+  }));
+
+  function clearQuery() {
+    runner.clear();
+    downloads.reset();
+    pointTool.clearGeometry();
+    polygonTool.clearGeometry();
+    clearResultHighlight(map);
+    panelView = 'projects';
+  }
+
   const toolbar = createQueryToolbar(ui.toolbar, ui.scope, {
     onActivate: (toolId) => toolManager.activate(toolId),
     onDeactivate: () => toolManager.deactivate('chip'),
-    onClear: () => {
-      runner.clear();
-      pointTool.clearGeometry();
-      polygonTool.clearGeometry();
-      panelView = 'projects';
-    }
+    onClear: clearQuery
   });
 
   function updateScope() {
@@ -52,14 +65,13 @@ export async function initializeApplication({ config, store, ui }) {
   function renderPanel() {
     const state = store.getState();
     if (state.query.status !== 'idle') {
-      renderQueryPanel(ui.sidebarContent, state.query, {
-        onClear: () => {
-          runner.clear();
-          pointTool.clearGeometry();
-          polygonTool.clearGeometry();
-          panelView = 'projects';
-        },
-        onCancel: () => runner.cancel()
+      renderQueryPanel(ui.sidebarContent, state.query, state.downloads, {
+        onClear: clearQuery,
+        onCancel: () => runner.cancel(),
+        onHighlight: (result) => showResultHighlight(map, result),
+        onClearHighlight: () => clearResultHighlight(map),
+        onDownloadAll: () => downloads.start(store.getState().query),
+        onDownloadNext: () => downloads.downloadNext()
       });
       return;
     }
@@ -124,6 +136,7 @@ export async function initializeApplication({ config, store, ui }) {
   toolbar.update(store.getState());
   toolbar.setPolygonEnabled(true);
   const unsubscribe = store.subscribe((state) => {
+    if (state.query.status === 'loading-projects') clearResultHighlight(map);
     updateScope();
     toolbar.update(state);
     renderPanel();

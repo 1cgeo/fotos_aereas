@@ -1,4 +1,4 @@
-import { cacheProjectData, setProjectLoadState, updateQuery } from '../app/actions.js';
+import { cacheProjectData, setDownloadState, setProjectLoadState, updateQuery } from '../app/actions.js';
 import { resolveQueryScope } from './query-scope.js';
 import { deduplicateAndSortResults, normalizeAnalysisResult } from './result-normalizer.js';
 
@@ -47,6 +47,14 @@ export function createAnalysisRunner({ config, store, repository, registry }) {
       currentController = controller;
       const queryId = createQueryId();
       const scope = resolveQueryScope(config, store.getState().projects.activeIds);
+      setDownloadState(store, {
+        snapshotId: null,
+        snapshot: null,
+        reportStatus: 'idle',
+        error: null,
+        items: [],
+        currentIndex: 0
+      });
       updateQuery(store, {
         queryId,
         status: 'loading-projects',
@@ -164,4 +172,3 @@ export function createAnalysisRunner({ config, store, repository, registry }) {
     }
   });
 }
-

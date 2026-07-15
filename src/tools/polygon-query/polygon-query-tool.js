@@ -71,7 +71,7 @@ function coordinateFromEvent(event) {
   return Number.isFinite(lng) && Number.isFinite(lat) ? [lng, lat] : null;
 }
 
-export function createPolygonQueryTool({ map, runner, store }) {
+export function createPolygonQueryTool({ map, runner, store, maxVertices = 500 }) {
   const model = createPolygonDrawingModel();
   let scope = null;
   let controls = null;
@@ -126,6 +126,10 @@ export function createPolygonQueryTool({ map, runner, store }) {
     if (model.state === 'complete' || model.state === 'editing') return;
     const coordinate = coordinateFromEvent(event);
     if (!coordinate) return;
+    if (model.vertices.length >= maxVertices) {
+      render(`O limite de ${maxVertices} vértices foi atingido. Conclua ou desfaça o desenho.`);
+      return;
+    }
     if (model.vertices.length >= 3) {
       const firstPoint = map.project(model.vertices[0]);
       const distance = Math.hypot(event.point.x - firstPoint.x, event.point.y - firstPoint.y);

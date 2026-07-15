@@ -43,3 +43,6 @@ export function updateQuery(store, patch) {
   store.setState((state) => replaceNested(state, 'query', patch));
 }
 
+export function setDownloadState(store, patch) {
+  store.setState((state) => replaceNested(state, 'downloads', patch));
+}

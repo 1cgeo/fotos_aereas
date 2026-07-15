@@ -331,17 +331,117 @@
   list-style: none;
 }
 
-.query-result-basic {
+.query-result-card {
   display: grid;
-  gap: 0.2rem;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 0.75rem;
   padding: 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
+  background: var(--color-surface);
   font-size: 0.85rem;
 }
 
-.query-result-basic span {
+.query-result-card:hover,
+.query-result-card:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgb(37 99 235 / 15%);
+}
+
+.query-result-card__thumbnail {
+  width: 6.5rem;
+  height: 6.5rem;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: #e2e8f0;
+}
+
+.query-result-card__body {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+}
+
+.query-result-card__title,
+.query-result-card__project {
+  display: block;
+}
+
+.query-result-card__project,
+.query-result-card__notes {
   color: var(--color-text-muted);
+}
+
+.query-result-card__metadata {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.1rem 0.4rem;
+  margin: 0;
+}
+
+.query-result-card__metadata dt {
+  font-weight: 700;
+}
+
+.query-result-card__metadata dd,
+.query-result-card__notes {
+  margin: 0;
+}
+
+.query-result-card__download {
+  justify-self: start;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.65rem;
+  text-decoration: none;
+}
+
+.query-result-group {
+  margin-top: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.query-download-all {
+  width: 100%;
+  margin: 0.5rem 0;
+}
+
+.download-workflow {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.5rem 0 1rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  background: #eff6ff;
+}
+
+.download-workflow:empty {
+  display: none;
+}
+
+.download-workflow p,
+.download-workflow small {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.download-workflow__complete {
+  color: #166534;
+  font-weight: 700;
+}
+
+@media (max-width: 420px) {
+  .query-result-card {
+    grid-template-columns: 1fr;
+  }
+
+  .query-result-card__thumbnail {
+    width: 100%;
+    height: 8rem;
+  }
 }
 
 .loading-screen,

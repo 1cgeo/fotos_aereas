@@ -30,7 +30,9 @@ export function createInitialState(config) {
     },
     downloads: {
       snapshotId: null,
+      snapshot: null,
       reportStatus: 'idle',
+      error: null,
       items: [],
       currentIndex: 0
     }
