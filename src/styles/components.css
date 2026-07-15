@@ -91,6 +91,57 @@
   color: var(--color-text-muted);
 }
 
+.catalog-guide {
+  margin-bottom: 1rem;
+  padding: 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.catalog-guide__title {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+.catalog-guide__steps {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalog-guide__step {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+  gap: 0.05rem 0.55rem;
+  align-items: center;
+}
+
+.catalog-guide__number {
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  grid-row: span 2;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.catalog-guide__step-title {
+  font-size: 0.78rem;
+}
+
+.catalog-guide__step-text {
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
 .scope-badge {
   display: inline-flex;
   align-items: center;
@@ -450,6 +501,30 @@
   font-size: 0.82rem;
 }
 
+.map-guidance {
+  position: absolute;
+  z-index: 5;
+  bottom: 2.25rem;
+  left: 50%;
+  display: grid;
+  width: max-content;
+  max-width: min(34rem, calc(100% - 2rem));
+  gap: 0.1rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-elevated);
+  box-shadow: var(--shadow-floating);
+  color: var(--color-text);
+  font-size: 0.8rem;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.map-guidance span {
+  color: var(--color-text-muted);
+}
+
 .query-panel__title {
   margin: 0;
 }
@@ -482,6 +557,38 @@
   color: var(--color-warning-text);
 }
 
+.query-next-search {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.75rem 0 1rem;
+  padding: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 36%, var(--color-border));
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-soft);
+}
+
+.query-next-search__title {
+  color: var(--color-primary-soft-text);
+  font-size: 0.85rem;
+}
+
+.query-next-search__text {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.query-next-search__button {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.query-inspection-hint {
+  margin: 1rem 0 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
 .query-result-list {
   display: grid;
   gap: 0.5rem;
@@ -504,6 +611,12 @@
 .query-result-card:focus-within {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 18%, transparent);
+}
+
+.query-result-card[data-selected='true'] {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface));
+  box-shadow: inset 3px 0 0 var(--color-primary);
 }
 
 .query-result-card__media {
@@ -573,6 +686,26 @@
   min-height: 2.25rem;
   padding: 0.4rem 0.65rem;
   text-decoration: none;
+}
+
+.query-result-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.query-result-card__actions .button {
+  flex: 1 1 8rem;
+  min-height: 2.35rem;
+  padding: 0.4rem 0.55rem;
+  text-align: center;
+}
+
+.query-result-card__locate[aria-pressed='true'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-soft-text);
 }
 
 .query-result-group {
@@ -734,7 +867,12 @@
     width: max-content;
   }
 
-  .app-shell--sidebar-collapsed .drawing-controls {
+  .map-guidance {
+    bottom: calc(min(46vh, 32rem) + 1.5rem);
+  }
+
+  .app-shell--sidebar-collapsed .drawing-controls,
+  .app-shell--sidebar-collapsed .map-guidance {
     bottom: 1.25rem;
   }
 }
@@ -809,6 +947,14 @@
     transform: none;
   }
 
+  .map-guidance {
+    right: 0.5rem;
+    left: 0.5rem;
+    width: auto;
+    max-width: none;
+    transform: none;
+  }
+
   .drawing-controls__status {
     flex-basis: 100%;
   }
@@ -827,7 +973,12 @@
     bottom: calc(min(55vh, 22rem) + 1rem);
   }
 
-  .app-shell--sidebar-collapsed .drawing-controls {
+  .map-guidance {
+    bottom: calc(min(55vh, 22rem) + 1rem);
+  }
+
+  .app-shell--sidebar-collapsed .drawing-controls,
+  .app-shell--sidebar-collapsed .map-guidance {
     bottom: 0.75rem;
   }
 }

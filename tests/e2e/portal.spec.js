@@ -23,6 +23,11 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function clickCoordinate(page, coordinate) {
+  await page.evaluate(() => new Promise((resolve) => {
+    const map = globalThis.__AERIAL_APP__.controller.map;
+    if (!map.isMoving()) resolve();
+    else map.once('moveend', resolve);
+  }));
   const point = await page.evaluate((lngLat) => {
     const projected = globalThis.__AERIAL_APP__.controller.map.project(lngLat);
     return { x: projected.x, y: projected.y };
@@ -31,12 +36,21 @@ async function clickCoordinate(page, coordinate) {
 }
 
 test('consulta sobreposição por ponto e destaca um resultado', async ({ page }) => {
+  await expect(page.getByText('Cada novo clique ou desenho substitui a busca anterior.')).toBeVisible();
   await page.getByRole('button', { name: 'Consultar ponto' }).click();
+  await expect(page.getByText(/Clique no mapa\. Clique em outro local/)).toBeVisible();
   await clickCoordinate(page, [-47.89, -15.75]);
   await expect(page.locator('.query-summary__label')).toBeVisible();
   const cards = page.locator('.query-result-card');
   await expect(cards).toHaveCount(2);
-  await cards.first().hover();
+  await expect(cards.first().getByRole('img', { name: /Miniatura/ })).toBeVisible();
+  await clickCoordinate(page, [-47.82, -15.80]);
+  await expect(page.locator('.query-result-card')).toHaveCount(1);
+  const locate = page.locator('.query-result-card__locate');
+  await locate.click();
+  await expect(locate).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.query-result-card')).toHaveAttribute('data-selected', 'true');
+  await page.locator('.query-result-card').hover();
   const highlighted = await page.evaluate(() => {
     const source = globalThis.__AERIAL_APP__.controller.map.getSource('query:result-highlight');
     return Boolean(source);
@@ -58,6 +72,9 @@ test('desenha polígono customizado e prepara a fila após o PDF', async ({ page
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/^relatorio_fotos_aereas_.*\.pdf$/);
   await expect(page.getByRole('button', { name: /Baixar próxima/ })).toBeVisible();
+  await page.locator('.query-next-search__button').click();
+  await expect(page.locator('.query-summary')).toHaveCount(0);
+  await expect(page.getByText(/0 vértice/)).toBeVisible();
 });
 
 test('consulta todos os projetos quando nenhum está ligado', async ({ page }) => {

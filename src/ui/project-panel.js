@@ -15,6 +15,26 @@ function loadLabel(loadState, active) {
 
 export function renderProjectsView(container, config, state, handlers) {
   const fragment = document.createDocumentFragment();
+  const guide = element('section', 'catalog-guide');
+  guide.setAttribute('aria-labelledby', 'catalog-guide-title');
+  const guideTitle = element('h3', 'catalog-guide__title', 'Como consultar');
+  guideTitle.id = 'catalog-guide-title';
+  const steps = element('ol', 'catalog-guide__steps');
+  const guidance = [
+    ['1', 'Defina o escopo', 'Ligue os voos desejados. Sem nenhum ligado, a busca consulta todos.'],
+    ['2', 'Escolha a ferramenta', 'Use Ponto para um local ou Área para desenhar uma região.'],
+    ['3', 'Consulte o mapa', 'Cada novo clique ou desenho substitui a busca anterior.']
+  ];
+  for (const [number, title, description] of guidance) {
+    const item = element('li', 'catalog-guide__step');
+    item.append(
+      element('span', 'catalog-guide__number', number),
+      element('strong', 'catalog-guide__step-title', title),
+      element('span', 'catalog-guide__step-text', description)
+    );
+    steps.append(item);
+  }
+  guide.append(guideTitle, steps);
   const list = element('div', 'project-list');
 
   for (const project of config.projects) {
@@ -67,7 +87,7 @@ export function renderProjectsView(container, config, state, handlers) {
   }
 
   if (config.projects.length === 0) list.append(element('p', 'empty-state', 'Nenhum projeto cadastrado.'));
-  fragment.append(list);
+  fragment.append(guide, list);
   container.replaceChildren(fragment);
 }
 

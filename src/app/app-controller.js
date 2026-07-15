@@ -21,6 +21,7 @@ import { createQueryToolbar } from '../ui/query-toolbar.js';
 import { createPointQueryTool } from '../tools/point-query/point-query-tool.js';
 import { createPolygonQueryTool } from '../tools/polygon-query/polygon-query-tool.js';
 import { createToolManager } from '../tools/tool-manager.js';
+import bbox from '@turf/bbox';
 
 export async function initializeApplication({ config, store, ui, themeController }) {
   const repository = createProjectRepository(config);
@@ -39,6 +40,7 @@ export async function initializeApplication({ config, store, ui, themeController
   setMapReady(store, true);
   let panelView = 'projects';
   let sidebarContext = null;
+  let selectedResultKey = null;
   const registry = createAnalysisRegistry();
   registry.register(pointIntersectionAnalysis);
   registry.register(polygonIntersectionAnalysis);
@@ -54,12 +56,43 @@ export async function initializeApplication({ config, store, ui, themeController
   }));
 
   function clearQuery() {
+    selectedResultKey = null;
     runner.clear();
     downloads.reset();
     pointTool.clearGeometry();
     polygonTool.clearGeometry();
     clearResultHighlight(map);
     panelView = 'projects';
+  }
+
+  function restoreSelectedHighlight() {
+    const selected = store.getState().query.results.find((result) => result.key === selectedResultKey);
+    if (selected) showResultHighlight(map, selected);
+    else clearResultHighlight(map);
+  }
+
+  function focusResult(result) {
+    selectedResultKey = selectedResultKey === result.key ? null : result.key;
+    if (!selectedResultKey) {
+      clearResultHighlight(map);
+      return null;
+    }
+    showResultHighlight(map, result);
+    const compact = window.matchMedia?.('(max-width: 900px)').matches;
+    const bottom = compact && !ui.getSidebarCollapsed?.()
+      ? Math.min(window.innerHeight * 0.46, 512) + 24
+      : 72;
+    const padding = compact ? { top: 96, right: 56, bottom, left: 56 } : 72;
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    map.fitBounds(bbox(result.geometry), { padding, maxZoom: 16, duration: reducedMotion ? 0 : 500 });
+    return selectedResultKey;
+  }
+
+  function startNewSearch(query) {
+    const toolId = query.geometry?.geometry?.type === 'Polygon' ? 'polygon-query' : 'point-query';
+    clearQuery();
+    if (toolManager.getActiveTool()?.id !== toolId) toolManager.activate(toolId);
+    if (window.matchMedia?.('(max-width: 900px)').matches) ui.setSidebarCollapsed?.(true);
   }
 
   const toolbar = createQueryToolbar(ui.toolbar, ui.scope, {
@@ -73,6 +106,9 @@ export async function initializeApplication({ config, store, ui, themeController
     ui.scope.textContent = count > 0
       ? `Escopo: ${count} ${count === 1 ? 'projeto ligado' : 'projetos ligados'}`
       : 'Escopo: todos os projetos';
+    ui.scope.title = count > 0
+      ? 'A consulta usará somente os projetos ligados.'
+      : 'Nenhum projeto está ligado; a consulta usará todo o catálogo.';
   }
 
   function renderPanel() {
@@ -86,10 +122,13 @@ export async function initializeApplication({ config, store, ui, themeController
         : `${resultCount} ${resultCount === 1 ? 'fotografia encontrada' : 'fotografias encontradas'}.`;
       ui.setSidebarHeader?.('Resultados da consulta', description);
       renderQueryPanel(ui.sidebarContent, state.query, state.downloads, {
+        selectedResultKey,
         onClear: clearQuery,
+        onNewSearch: () => startNewSearch(state.query),
         onCancel: () => runner.cancel(),
         onHighlight: (result) => showResultHighlight(map, result),
-        onClearHighlight: () => clearResultHighlight(map),
+        onClearHighlight: restoreSelectedHighlight,
+        onSelect: focusResult,
         onDownloadAll: () => downloads.start(store.getState().query),
         onDownloadNext: () => downloads.downloadNext()
       });
@@ -161,7 +200,10 @@ export async function initializeApplication({ config, store, ui, themeController
   toolbar.update(store.getState());
   toolbar.setPolygonEnabled(true);
   const unsubscribe = store.subscribe((state) => {
-    if (state.query.status === 'loading-projects') clearResultHighlight(map);
+    if (state.query.status === 'idle' || state.query.status === 'loading-projects') {
+      selectedResultKey = null;
+      clearResultHighlight(map);
+    }
     updateScope();
     toolbar.update(state);
     renderPanel();

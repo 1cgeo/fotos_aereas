@@ -91,8 +91,11 @@ export function createPolygonQueryTool({ map, runner, store, maxVertices = 500 }
     const count = model.vertices.length;
     controls.undo.disabled = model.state !== 'drawing' || count === 0;
     controls.finish.disabled = model.state !== 'drawing' || count < 3;
+    controls.undo.hidden = complete;
+    controls.finish.hidden = complete;
+    controls.cancel.textContent = complete ? 'Desenhar nova área' : 'Cancelar desenho';
     controls.status.textContent = message || (model.state === 'complete'
-      ? 'Arraste os vértices para ajustar a consulta.'
+      ? 'Área concluída. Arraste os vértices para ajustar ou inicie outra busca.'
       : `${count} vértice(s). Clique no mapa para desenhar.`);
   }
 

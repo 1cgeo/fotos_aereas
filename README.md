@@ -12,8 +12,9 @@ O repositório já inclui dois aerolevantamentos fictícios de Brasília, seis f
 - ativação independente das grades de voo;
 - consulta por clique, incluindo todas as fotografias sobrepostas;
 - ferramenta própria para desenho e edição de polígono, sem Terra Draw;
+- buscas consecutivas sem recarregar ou reativar a ferramenta;
 - consulta apenas nos projetos ligados ou em todo o catálogo quando nenhum está ligado;
-- resultados com thumbnail, metadados, destaque no mapa e download individual;
+- resultados com thumbnail, metadados, seleção persistente, enquadramento e destaque no mapa;
 - PDF dinâmico com os dados dos voos e fotografias selecionadas;
 - fila manual de downloads, uma imagem por vez, adequada a arquivos pesados;
 - painel recolhível em tablets e celulares, toolbar compacta e resultados adaptáveis;

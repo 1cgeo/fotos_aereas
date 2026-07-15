@@ -15,7 +15,8 @@ describe('painel de resultados', () => {
     const container = document.createElement('div');
     const handlers = {
       onClear: vi.fn(), onCancel: vi.fn(), onHighlight: vi.fn(), onClearHighlight: vi.fn(),
-      onDownloadAll: vi.fn(), onDownloadNext: vi.fn()
+      onDownloadAll: vi.fn(), onDownloadNext: vi.fn(), onNewSearch: vi.fn(),
+      onSelect: vi.fn((selected) => selected.key), selectedResultKey: null
     };
     renderQueryPanel(container, {
       status: 'ready', results: [result()], projectErrors: []
@@ -26,6 +27,14 @@ describe('painel de resultados', () => {
     card.dispatchEvent(new Event('mouseenter'));
     card.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
     expect(handlers.onHighlight).toHaveBeenCalledTimes(2);
+    const locate = [...container.querySelectorAll('button')].find((button) => button.textContent === 'Ver no mapa');
+    locate.click();
+    expect(handlers.onSelect).toHaveBeenCalledWith(expect.objectContaining({ key: 'p:1' }));
+    expect(locate.getAttribute('aria-pressed')).toBe('true');
+    expect(locate.textContent).toBe('Destacado no mapa');
+    const nextSearch = [...container.querySelectorAll('button')].find((button) => button.textContent === 'Escolher outro ponto');
+    nextSearch.click();
+    expect(handlers.onNewSearch).toHaveBeenCalledOnce();
     const link = container.querySelector('a[download]');
     expect(link.getAttribute('download')).toBe('photo.tif');
   });
@@ -34,7 +43,8 @@ describe('painel de resultados', () => {
     const container = document.createElement('div');
     const handlers = {
       onClear: vi.fn(), onCancel: vi.fn(), onHighlight: vi.fn(), onClearHighlight: vi.fn(),
-      onDownloadAll: vi.fn(), onDownloadNext: vi.fn()
+      onDownloadAll: vi.fn(), onDownloadNext: vi.fn(), onNewSearch: vi.fn(),
+      onSelect: vi.fn(), selectedResultKey: null
     };
     renderQueryPanel(container, { status: 'ready', results: [result()], projectErrors: [] }, {
       reportStatus: 'ready', items: [result()], currentIndex: 0

@@ -12,8 +12,26 @@ function formatBytes(value) {
   return `${(value / 1024 ** 2).toFixed(1)} MB`;
 }
 
+function setCardSelected(item, selected) {
+  item.dataset.selected = String(selected);
+  if (selected) item.setAttribute('aria-current', 'true');
+  else item.removeAttribute('aria-current');
+  const button = item.querySelector('.query-result-card__locate');
+  if (!button) return;
+  button.setAttribute('aria-pressed', String(selected));
+  button.textContent = selected ? 'Destacado no mapa' : 'Ver no mapa';
+}
+
+function updateListSelection(item, selectedKey) {
+  const list = item.closest('.query-result-list');
+  list?.querySelectorAll('.query-result-card').forEach((card) => {
+    setCardSelected(card, card.dataset.resultKey === selectedKey);
+  });
+}
+
 function resultCard(result, handlers) {
   const item = element('li', 'query-result-card');
+  item.dataset.resultKey = result.key;
   item.addEventListener('mouseenter', () => handlers.onHighlight(result));
   item.addEventListener('mouseleave', handlers.onClearHighlight);
   item.addEventListener('focusin', () => handlers.onHighlight(result));
@@ -54,6 +72,13 @@ function resultCard(result, handlers) {
   }
   body.append(metadata);
   if (result.notes) body.append(element('p', 'query-result-card__notes', result.notes));
+  const actions = element('div', 'query-result-card__actions');
+  const locate = element('button', 'button button--secondary query-result-card__locate', 'Ver no mapa');
+  locate.type = 'button';
+  locate.addEventListener('click', () => {
+    const selectedKey = handlers.onSelect(result);
+    updateListSelection(item, selectedKey);
+  });
   const download = element('a', 'button button--primary query-result-card__download', 'Baixar fotografia');
   download.href = result.downloadUrl;
   download.download = result.downloadFilename;
@@ -61,9 +86,31 @@ function resultCard(result, handlers) {
   download.rel = 'noopener noreferrer';
   download.referrerPolicy = 'no-referrer';
   download.addEventListener('click', () => handlers.onDownload?.(result));
-  body.append(download);
+  actions.append(locate, download);
+  body.append(actions);
   item.append(media, body);
+  setCardSelected(item, handlers.selectedResultKey === result.key);
   return item;
+}
+
+function newSearchBlock(query, handlers) {
+  const polygon = query.geometry?.geometry?.type === 'Polygon';
+  const section = element('section', 'query-next-search');
+  section.append(
+    element('strong', 'query-next-search__title', 'Continue pesquisando'),
+    element(
+      'p',
+      'query-next-search__text',
+      polygon
+        ? 'Desenhe outra área para substituir estes resultados.'
+        : 'Clique em outro ponto do mapa para substituir estes resultados.'
+    )
+  );
+  const button = element('button', 'button button--secondary query-next-search__button', polygon ? 'Desenhar nova área' : 'Escolher outro ponto');
+  button.type = 'button';
+  button.addEventListener('click', handlers.onNewSearch);
+  section.append(button);
+  return section;
 }
 
 function downloadWorkflow(downloads, handlers) {
@@ -148,9 +195,9 @@ export function renderQueryPanel(container, query, downloads, handlers) {
     cancel.addEventListener('click', handlers.onCancel);
     content.append(cancel);
   } else if (query.status === 'cancelled') {
-    content.append(element('p', 'empty-state', 'A consulta foi cancelada.'));
+    content.append(element('p', 'empty-state', 'A consulta foi cancelada.'), newSearchBlock(query, handlers));
   } else if (query.status === 'error') {
-    content.append(element('p', 'inline-error', 'Não foi possível concluir a consulta.'));
+    content.append(element('p', 'inline-error', 'Não foi possível concluir a consulta.'), newSearchBlock(query, handlers));
   } else {
     const summary = element('div', 'query-summary');
     summary.append(
@@ -161,15 +208,17 @@ export function renderQueryPanel(container, query, downloads, handlers) {
     if (query.projectErrors.length > 0) {
       content.append(element('p', 'query-warning', `${query.projectErrors.length} projeto(s) não puderam ser consultados.`));
     }
+    content.append(newSearchBlock(query, handlers));
     if (query.results.length === 0) {
-      content.append(element('p', 'empty-state', 'Nenhuma fotografia cobre o local consultado.'));
+      content.append(element('p', 'empty-state', 'Nenhuma fotografia cobre o local consultado. Tente uma nova posição ou área.'));
     } else {
       const all = element('button', 'button button--primary query-download-all', 'Preparar download de todas');
       all.type = 'button';
       all.disabled = downloads.reportStatus === 'generating';
       all.addEventListener('click', handlers.onDownloadAll);
       const downloadHint = element('p', 'query-download-hint', 'Gera primeiro um PDF de conferência e depois libera as imagens uma a uma.');
-      content.append(all, downloadHint, downloadWorkflow(downloads, handlers), resultList(query, handlers));
+      const inspectionHint = element('p', 'query-inspection-hint', 'Passe o mouse sobre uma foto para pré-visualizar a cobertura ou use “Ver no mapa” para mantê-la destacada.');
+      content.append(all, downloadHint, downloadWorkflow(downloads, handlers), inspectionHint, resultList(query, handlers));
     }
   }
 

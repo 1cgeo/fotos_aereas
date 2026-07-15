@@ -39,7 +39,9 @@ A interface foi inspecionada no Chrome em cinco estados visuais: desktop claro, 
 | Resumo de resultados | A contagem não tinha destaque visual. | Bloco de resumo com número proeminente e descrição; cabeçalho do painel repete o contexto de forma curta. |
 | Grupos de resultados | O nome do projeto estava oculto de tecnologias assistivas. | Headings de nível 4 perceptíveis e mantidos na lista ordenada. |
 | Cartão de fotografia | O cartão criava foco extra além do link. | Highlight usa `focusin/focusout` dos controles internos; somente ações reais entram na ordem de tabulação. |
+| Inspeção da fotografia | Hover temporário não atendia quem compara fotos com calma ou usa toque. | `Ver no mapa` mantém a cobertura destacada, enquadra sua geometria e marca visualmente o cartão selecionado. |
 | Thumbnail | Falha de imagem deixava apenas um espaço vazio. | Placeholder textual `Sem miniatura`. |
+| Buscas consecutivas | Não estava evidente que uma ferramenta continuava ativa depois do resultado. | Instrução flutuante, bloco `Continue pesquisando` e ação para novo ponto/área; a nova consulta substitui a anterior. |
 | Download em lote | A relação entre PDF e imagens podia ser interpretada como download simultâneo. | Texto antecipatório e marcadores `Etapa 1 de 2` / `Etapa 2 de 2`. |
 | Loading e erro fatal | Precisavam respeitar os dois temas e redução de movimento. | Todos os estados usam tokens; animações são praticamente removidas com `prefers-reduced-motion`. |
 
@@ -57,6 +59,15 @@ A interface foi inspecionada no Chrome em cinco estados visuais: desktop claro, 
 ## Persistência do tema
 
 A chave usada é `aerial-catalog-theme`. Valores diferentes de `dark` são normalizados para `light`; não há consulta a `prefers-color-scheme`. Se o navegador bloquear armazenamento local, a escolha continua ativa durante a página atual sem impedir o funcionamento do portal.
+
+## Fluxo de consulta refinado
+
+1. O catálogo apresenta três passos curtos: escopo, ferramenta e mapa.
+2. Ao ativar Ponto, uma instrução informa que novos cliques geram novas buscas.
+3. Ao concluir uma Área, os controles oferecem diretamente `Desenhar nova área`.
+4. Resultados novos substituem os anteriores; não há acúmulo silencioso de seleções.
+5. Hover e foco pré-visualizam footprints; `Ver no mapa` fixa o highlight e enquadra a foto.
+6. A seleção persiste durante download e atualizações do painel, sendo limpa na próxima consulta.
 
 ## Limites mantidos
 

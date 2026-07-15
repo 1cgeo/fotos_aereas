@@ -24,6 +24,18 @@ function ensureLayer(map) {
   }
 }
 
+function createGuidance() {
+  const guidance = document.createElement('div');
+  guidance.className = 'map-guidance';
+  guidance.setAttribute('role', 'status');
+  const title = document.createElement('strong');
+  title.textContent = 'Consulta por ponto';
+  const text = document.createElement('span');
+  text.textContent = 'Clique no mapa. Clique em outro local para fazer uma nova busca.';
+  guidance.append(title, text);
+  return guidance;
+}
+
 export function createPointQueryTool({ map, runner, store }) {
   let scope = null;
   const handleClick = (event) => {
@@ -47,6 +59,9 @@ export function createPointQueryTool({ map, runner, store }) {
       if (scope) return;
       ensureLayer(map);
       scope = createCleanupScope();
+      const guidance = createGuidance();
+      map.getContainer().append(guidance);
+      scope.add(() => guidance.remove());
       const canvas = map.getCanvas();
       const previousCursor = canvas.style.cursor;
       canvas.style.cursor = 'crosshair';
@@ -70,4 +85,3 @@ export function createPointQueryTool({ map, runner, store }) {
     }
   });
 }
-

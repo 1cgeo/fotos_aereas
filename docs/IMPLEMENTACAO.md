@@ -9,6 +9,7 @@
 5. Resultados e downloads: cartões, highlight, relatório PDF e fila individual.
 6. Produção: responsividade, acessibilidade, CSP/headers, divisão de bundle, testes de segurança e E2E.
 7. Revisão de UI/UX: temas explícitos persistentes, bottom sheet recolhível, contextos do painel, toolbar compacta e auditoria multirresolução.
+8. Refinamento de usabilidade: onboarding, instrução contextual, buscas consecutivas, seleção de fotografia e highlight persistente.
 
 ## Fluxo de aceitação rápido
 
