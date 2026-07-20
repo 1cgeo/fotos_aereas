@@ -33,11 +33,11 @@ const payload = JSON.stringify({
   ]
 });
 
-function response(body = payload) {
+function response(body = payload, contentType = 'application/geo+json') {
   return {
     ok: true,
     status: 200,
-    headers: { get: (name) => (name === 'content-type' ? 'application/geo+json' : null) },
+    headers: { get: (name) => (name === 'content-type' ? contentType : null) },
     text: vi.fn().mockResolvedValue(body)
   };
 }
@@ -54,6 +54,32 @@ describe('createProjectRepository', () => {
 
     await repository.load('projeto-1');
     expect(fetchFn).toHaveBeenCalledOnce();
+  });
+
+  // A extensao .geojson nao esta no mime.types padrao do nginx, entao o servidor
+  // responde application/octet-stream para um arquivo perfeitamente valido. Foi o
+  // que impediu o portal de carregar qualquer voo na primeira subida em producao.
+  it.each([
+    'application/octet-stream',
+    'application/json',
+    'application/geo+json; charset=utf-8',
+    ''
+  ])('aceita o content-type %s, deixando o JSON.parse julgar', async (tipo) => {
+    const fetchFn = vi.fn().mockResolvedValue(response(payload, tipo));
+    const repository = createProjectRepository(config, { fetchFn });
+    await expect(repository.load('projeto-1')).resolves.toMatchObject({ projectId: 'projeto-1' });
+  });
+
+  it('rejeita pagina de erro HTML servida com status 200', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(response('<!doctype html><title>404</title>', 'text/html'));
+    const repository = createProjectRepository(config, { fetchFn });
+    await expect(repository.load('projeto-1')).rejects.toThrow(/não retornou JSON/);
+  });
+
+  it('rejeita conteudo que nao e JSON mesmo com content-type tolerado', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(response('isto nao e json', 'application/octet-stream'));
+    const repository = createProjectRepository(config, { fetchFn });
+    await expect(repository.load('projeto-1')).rejects.toThrow(/não é um JSON válido/);
   });
 
   it('isola erro e permite nova tentativa', async () => {

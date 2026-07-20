@@ -16,9 +16,15 @@ export function createProjectRepository(config, options = {}) {
     });
     if (!response.ok) throw new Error(`Falha ao carregar ${project.title}: HTTP ${response.status}.`);
 
-    const contentType = response.headers?.get?.('content-type') || '';
-    if (contentType && !contentType.includes('json') && !contentType.includes('geo+json')) {
-      throw new Error(`O projeto ${project.title} não retornou JSON.`);
+    // A checagem de tipo existe para pegar o servidor que devolve uma PÁGINA DE
+    // ERRO no lugar do dado, respondendo 200. Ela não deve reprovar
+    // `application/octet-stream`: a extensão .geojson não está no mime.types
+    // padrão do nginx nem da maioria dos servidores, então "não sei o tipo" é a
+    // resposta normal para um arquivo perfeitamente válido. Quem julga o
+    // conteúdo de fato é o JSON.parse logo abaixo.
+    const contentType = (response.headers?.get?.('content-type') || '').toLowerCase();
+    if (contentType.includes('html') || contentType.includes('xml')) {
+      throw new Error(`O projeto ${project.title} não retornou JSON (o servidor respondeu ${contentType}).`);
     }
     const contentLength = Number(response.headers?.get?.('content-length'));
     if (Number.isFinite(contentLength) && contentLength > MAX_GEOJSON_BYTES) {
