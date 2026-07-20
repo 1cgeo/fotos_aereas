@@ -20,6 +20,18 @@ export default [
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
     }
+  },
+  {
+    // Ferramentas de linha de comando: rodam no Node e falam pelo console.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'module',
+      globals: { ...globals.node }
+    },
+    rules: {
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
+    }
   }
 ];
 
