@@ -318,7 +318,14 @@ export async function generateDownloadReport(snapshot) {
     bold,
     imagemBase
   });
-  y -= MAPA.altura + 16;
+  y -= MAPA.altura + 10;
+  // A atribuição do mapa fica JUNTO do mapa que ela atribui. No fim do relatório
+  // ela ficava solta, longe daquilo a que se refere.
+  if (snapshot.attribution) {
+    line(`Mapa de referência: ${snapshot.attribution}`, { size: 8, color: rgb(0.35, 0.4, 0.48), gap: 12 });
+  } else {
+    y -= 6;
+  }
 
   line('Aerolevantamentos', { size: 13, bold: true, gap: 4 });
   for (const project of snapshot.projects) {
@@ -347,13 +354,10 @@ export async function generateDownloadReport(snapshot) {
       item.nominalScale,
       item.downloadFilename
     ].filter(Boolean).join(' | '), { indent: 10 });
-    if (item.licenseLabel) line(`Licença: ${item.licenseLabel}`, { indent: 10 });
+    // A licença NÃO se repete por fotografia: ela é a mesma para todo o
+    // aerolevantamento e já consta no bloco do projeto, acima. Repetir em cada
+    // item só alongava o relatório sem acrescentar informação.
     y -= 5;
   });
-
-  if (snapshot.attribution) {
-    ensureSpace(35);
-    line(`Atribuição do mapa de referência: ${snapshot.attribution}`, { size: 8, color: rgb(0.35, 0.4, 0.48) });
-  }
   return document.save();
 }
