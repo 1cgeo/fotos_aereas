@@ -11,13 +11,43 @@ function corDeHex(hex, padrao = [0.15, 0.39, 0.92]) {
   return rgb(((inteiro >> 16) & 255) / 255, ((inteiro >> 8) & 255) / 255, (inteiro & 255) / 255);
 }
 
-// Percorre os anéis de um Polygon ou MultiPolygon sem distinguir os dois.
-function aneis(geometry) {
+// Percorre qualquer geometria devolvendo CAMINHOS (sequências de coordenadas a
+// ligar) e PONTOS soltos. A consulta pode vir de um arquivo importado, que traz
+// ponto, linha e polígono misturados, então nada aqui presume polígono.
+function caminhos(geometry) {
   if (!geometry) return [];
-  if (geometry.type === 'Polygon') return geometry.coordinates || [];
-  if (geometry.type === 'MultiPolygon') return (geometry.coordinates || []).flat();
-  return [];
+  switch (geometry.type) {
+    case 'Polygon':
+      return geometry.coordinates || [];
+    case 'MultiPolygon':
+      return (geometry.coordinates || []).flat();
+    case 'LineString':
+      return [geometry.coordinates || []];
+    case 'MultiLineString':
+      return geometry.coordinates || [];
+    case 'GeometryCollection':
+      return (geometry.geometries || []).flatMap(caminhos);
+    default:
+      return [];
+  }
 }
+
+function pontos(geometry) {
+  if (!geometry) return [];
+  switch (geometry.type) {
+    case 'Point':
+      return [geometry.coordinates];
+    case 'MultiPoint':
+      return geometry.coordinates || [];
+    case 'GeometryCollection':
+      return (geometry.geometries || []).flatMap(pontos);
+    default:
+      return [];
+  }
+}
+
+// mantido para o desenho das coberturas, que são sempre áreas
+const aneis = caminhos;
 
 function extremos(geometrias) {
   let oeste = Infinity;
@@ -25,14 +55,12 @@ function extremos(geometrias) {
   let leste = -Infinity;
   let norte = -Infinity;
   for (const geometry of geometrias) {
-    if (geometry?.type === 'Point') {
-      const [x, y] = geometry.coordinates;
+    for (const [x, y] of pontos(geometry)) {
       oeste = Math.min(oeste, x); leste = Math.max(leste, x);
       sul = Math.min(sul, y); norte = Math.max(norte, y);
-      continue;
     }
-    for (const anel of aneis(geometry)) {
-      for (const [x, y] of anel) {
+    for (const caminho of caminhos(geometry)) {
+      for (const [x, y] of caminho) {
         oeste = Math.min(oeste, x); leste = Math.max(leste, x);
         sul = Math.min(sul, y); norte = Math.max(norte, y);
       }
@@ -129,17 +157,18 @@ function desenharEsquema(page, snapshot, { topo, largura, altura, regular, bold,
     });
   });
 
-  // A geometria consultada por último, para ficar por cima das coberturas.
+  // A geometria consultada por último, para ficar por cima das coberturas. Pode
+  // ser ponto, linha, polígono ou um conjunto deles vindo de arquivo importado.
   const corConsulta = rgb(0.72, 0.06, 0.06);
-  if (snapshot.queryGeometry?.type === 'Point') {
-    const [lon, lat] = snapshot.queryGeometry.coordinates;
-    const x = paraX(lon);
-    const y = paraY(lat);
-    page.drawCircle({ x, y, size: 4.5, color: corConsulta });
-    page.drawLine({ start: { x: x - 11, y }, end: { x: x + 11, y }, thickness: 0.9, color: corConsulta });
-    page.drawLine({ start: { x, y: y - 11 }, end: { x, y: y + 11 }, thickness: 0.9, color: corConsulta });
-  } else if (snapshot.queryGeometry) {
+  if (snapshot.queryGeometry) {
     contorno(snapshot.queryGeometry, { cor: corConsulta, espessura: 1.8 });
+    for (const [lon, lat] of pontos(snapshot.queryGeometry)) {
+      const x = paraX(lon);
+      const y = paraY(lat);
+      page.drawCircle({ x, y, size: 4.5, color: corConsulta });
+      page.drawLine({ start: { x: x - 11, y }, end: { x: x + 11, y }, thickness: 0.9, color: corConsulta });
+      page.drawLine({ start: { x, y: y - 11 }, end: { x, y: y + 11 }, thickness: 0.9, color: corConsulta });
+    }
   }
 
   // Escala: distância redonda de cerca de um quarto do quadro. Em Mercator a
@@ -292,9 +321,12 @@ export async function generateDownloadReport(snapshot) {
     if (options.gap) y -= options.gap;
   }
 
-  const tipoConsulta = snapshot.geometryType === 'Point'
-    ? 'ponto'
-    : snapshot.geometryType === 'Polygon' ? 'área desenhada' : 'não informada';
+  const rotulosDeConsulta = {
+    Point: 'ponto',
+    Polygon: 'área desenhada',
+    GeometryCollection: 'geometria importada de arquivo'
+  };
+  const tipoConsulta = rotulosDeConsulta[snapshot.geometryType] || 'não informada';
 
   addPage();
   line(snapshot.siteTitle, { size: 18, bold: true, leading: 23, gap: 4 });

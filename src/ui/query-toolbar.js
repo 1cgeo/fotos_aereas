@@ -20,12 +20,14 @@ export function createQueryToolbar(container, scopeElement, handlers) {
   const tools = document.createElement('div');
   tools.className = 'tool-buttons';
   const polygonButton = button('Desenhar área', 'tool-button', 'Área');
+  const importButton = button('Importar GeoJSON', 'tool-button', 'Importar');
   const clearButton = button('Limpar consulta', 'tool-button tool-button--quiet', 'Limpar');
   polygonButton.addEventListener('click', () => {
     if (!polygonButton.disabled) handlers.onActivate('polygon-query');
   });
+  importButton.addEventListener('click', () => handlers.onImport?.());
   clearButton.addEventListener('click', handlers.onClear);
-  tools.append(polygonButton, clearButton);
+  tools.append(polygonButton, importButton, clearButton);
 
   const activeChip = document.createElement('div');
   activeChip.className = 'active-tool-chip';
