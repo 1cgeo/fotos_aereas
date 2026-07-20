@@ -21,6 +21,8 @@ import { renderQueryPanel } from '../ui/query-panel.js';
 import { createQueryToolbar } from '../ui/query-toolbar.js';
 import { createPointQueryTool } from '../tools/point-query/point-query-tool.js';
 import { createPolygonQueryTool } from '../tools/polygon-query/polygon-query-tool.js';
+import { createImportQueryTool } from '../tools/import-query/import-query-tool.js';
+import { importIntersectionAnalysis } from '../analysis/import-intersection.analysis.js';
 import { createToolManager } from '../tools/tool-manager.js';
 import bbox from '@turf/bbox';
 
@@ -47,6 +49,7 @@ export async function initializeApplication({ config, store, ui, themeController
   const registry = createAnalysisRegistry();
   registry.register(pointIntersectionAnalysis);
   registry.register(polygonIntersectionAnalysis);
+  registry.register(importIntersectionAnalysis);
   const runner = createAnalysisRunner({ config, store, repository, registry });
   const downloads = createDownloadController({ config, store });
   const toolManager = createToolManager(store);
@@ -55,6 +58,7 @@ export async function initializeApplication({ config, store, ui, themeController
   // passada continua desenhado depois de um clique por ponto, e vice-versa.
   let pointTool = null;
   let polygonTool = null;
+  let importTool = null;
   function prepararNovaBusca(origem) {
     selectedResultKey = null;
     revealedQueryId = null;
@@ -63,6 +67,7 @@ export async function initializeApplication({ config, store, ui, themeController
     clearQueryResults(map);
     if (origem !== 'point') pointTool?.clearGeometry();
     if (origem !== 'polygon') polygonTool?.clearGeometry();
+    if (origem !== 'import') importTool?.clearGeometry();
   }
 
   pointTool = toolManager.register(createPointQueryTool({
@@ -79,6 +84,13 @@ export async function initializeApplication({ config, store, ui, themeController
     maxVertices: config.site.maxDrawingVertices,
     onNewQuery: () => prepararNovaBusca('polygon')
   }));
+  // Fora do gerenciador de ferramentas de propósito: importar é ação, não modo,
+  // e o gerenciador desativaria a "ferramenta" antes de o arquivo ser escolhido.
+  importTool = createImportQueryTool({
+    map,
+    runner,
+    onNewQuery: () => prepararNovaBusca('import')
+  });
 
   function clearQuery() {
     selectedResultKey = null;
@@ -87,6 +99,9 @@ export async function initializeApplication({ config, store, ui, themeController
     downloads.reset();
     pointTool.clearGeometry();
     polygonTool.clearGeometry();
+    // Também o import: sem isto, "Limpar consulta" deixava no mapa o GeoJSON
+    // importado e o aviso "Consultando por <arquivo>" de uma busca que já não existe.
+    importTool.clearGeometry();
     clearQueryResults(map);
     clearResultHighlight(map);
     panelView = 'projects';
@@ -135,9 +150,12 @@ export async function initializeApplication({ config, store, ui, themeController
   }
 
   function startNewSearch(query) {
-    const toolId = query.geometry?.geometry?.type === 'Polygon' ? 'polygon-query' : 'point-query';
+    // Consulta importada não tem ferramenta a reativar: volta ao padrão (ponto).
+    const tipo = query.geometry?.geometry?.type;
+    const toolId = tipo === 'Polygon' ? 'polygon-query' : 'point-query';
     clearQuery();
     if (toolManager.getActiveTool()?.id !== toolId) toolManager.activate(toolId);
+    retomarPadrao();
     if (window.matchMedia?.('(max-width: 900px)').matches) ui.setSidebarCollapsed?.(true);
   }
 
@@ -157,6 +175,14 @@ export async function initializeApplication({ config, store, ui, themeController
     onDeactivate: () => {
       toolManager.deactivate('chip');
       retomarPadrao();
+    },
+    // Importar é AÇÃO, não modo: sai do desenho de área (se estiver nele), volta
+    // o mapa ao padrão e abre o seletor. A consulta acontece quando o arquivo
+    // chega, o que pode demorar: nada aqui pode desmontar o seletor antes disso.
+    onImport: () => {
+      toolManager.deactivate('import');
+      retomarPadrao();
+      importTool.abrir();
     },
     onClear: clearQuery
   });
@@ -191,7 +217,8 @@ export async function initializeApplication({ config, store, ui, themeController
         onClearHighlight: restoreSelectedHighlight,
         onSelect: focusResult,
         onDownloadAll: () => downloads.start(store.getState().query),
-        onDownloadNext: () => downloads.downloadNext()
+        onDownloadItem: (key) => downloads.downloadItem(key),
+        onDownloadReport: () => downloads.downloadReport()
       });
       return;
     }

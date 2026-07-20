@@ -15,12 +15,12 @@ describe('painel de resultados', () => {
     const container = document.createElement('div');
     const handlers = {
       onClear: vi.fn(), onCancel: vi.fn(), onHighlight: vi.fn(), onClearHighlight: vi.fn(),
-      onDownloadAll: vi.fn(), onDownloadNext: vi.fn(), onNewSearch: vi.fn(),
+      onDownloadAll: vi.fn(), onDownloadItem: vi.fn(), onNewSearch: vi.fn(),
       onSelect: vi.fn((selected) => selected.key), selectedResultKey: null
     };
     renderQueryPanel(container, {
       status: 'ready', results: [result()], projectErrors: []
-    }, { reportStatus: 'idle', items: [], currentIndex: 0 }, handlers);
+    }, { reportStatus: 'idle', items: [], baixados: new Set() }, handlers);
     expect(container.textContent).toContain('Foto 1');
     expect(container.textContent).toContain('2.0 KB');
     const card = container.querySelector('.query-result-card');
@@ -51,11 +51,11 @@ describe('painel de resultados', () => {
     const container = document.createElement('div');
     const handlers = {
       onClear: vi.fn(), onCancel: vi.fn(), onHighlight: vi.fn(), onClearHighlight: vi.fn(),
-      onDownloadAll: vi.fn(), onDownloadNext: vi.fn(), onNewSearch: vi.fn(),
+      onDownloadAll: vi.fn(), onDownloadItem: vi.fn(), onNewSearch: vi.fn(),
       onSelect: vi.fn(), selectedResultKey: null
     };
     renderQueryPanel(container, { status: 'ready', results, projectErrors: [] },
-      { reportStatus: 'idle', items: [], currentIndex: 0 }, handlers);
+      { reportStatus: 'idle', items: [], baixados: new Set() }, handlers);
     return container;
   }
 
@@ -102,18 +102,80 @@ describe('painel de resultados', () => {
     expect(itens.hidden).toBe(false);
   });
 
-  it('mostra progresso da fila individual', () => {
+  function segundo() {
+    return { ...result(), key: 'p:2', photoId: '2', title: 'Foto 2', downloadFilename: 'photo2.tif' };
+  }
+
+  function painelDeDownload(baixados) {
     const container = document.createElement('div');
     const handlers = {
       onClear: vi.fn(), onCancel: vi.fn(), onHighlight: vi.fn(), onClearHighlight: vi.fn(),
-      onDownloadAll: vi.fn(), onDownloadNext: vi.fn(), onNewSearch: vi.fn(),
-      onSelect: vi.fn(), selectedResultKey: null
+      onDownloadAll: vi.fn(), onDownloadItem: vi.fn(), onDownloadReport: vi.fn(),
+      onNewSearch: vi.fn(), onSelect: vi.fn(), selectedResultKey: null
     };
-    renderQueryPanel(container, { status: 'ready', results: [result()], projectErrors: [] }, {
-      reportStatus: 'ready', items: [result()], currentIndex: 0
+    const itens = [result(), segundo()];
+    renderQueryPanel(container, { status: 'ready', results: itens, projectErrors: [] }, {
+      reportStatus: 'ready', items: itens, baixados, reportFilename: 'relatorio_abc.pdf'
     }, handlers);
-    const next = [...container.querySelectorAll('button')].find((button) => button.textContent.includes('próxima'));
-    next.click();
-    expect(handlers.onDownloadNext).toHaveBeenCalledOnce();
+    return { container, handlers };
+  }
+
+  // So as linhas de FOTOGRAFIA: o relatorio tem lista propria e nao deve ser
+  // confundido com um resultado da consulta.
+  function linhasDeFoto(container) {
+    return container.querySelectorAll('.download-list:not(.download-list--relatorio) .download-list__item');
+  }
+
+  it('lista UMA linha por fotografia, cada uma baixavel por si', () => {
+    const { container, handlers } = painelDeDownload(new Set());
+    const linhas = linhasDeFoto(container);
+    expect(linhas).toHaveLength(2);
+    expect(container.textContent).toContain('0 de 2 fotografia(s) baixada(s)');
+
+    // A SEGUNDA, sem passar pela primeira: nao ha ordem imposta.
+    linhas[1].querySelector('button').click();
+    expect(handlers.onDownloadItem).toHaveBeenCalledWith('p:2');
+  });
+
+  it('marca a que ja veio e AINDA deixa baixar de novo', () => {
+    const { container, handlers } = painelDeDownload(new Set(['p:1']));
+    const linhas = linhasDeFoto(container);
+    expect(linhas[0].dataset.baixado).toBe('true');
+    expect(linhas[1].dataset.baixado).toBeUndefined();
+    expect(container.textContent).toContain('1 de 2 fotografia(s) baixada(s)');
+
+    // O caso que a fila sequencial impedia: reaver o arquivo cuja conexao caiu.
+    const botao = linhas[0].querySelector('button');
+    expect(botao.disabled).toBe(false);
+    expect(botao.getAttribute('aria-label')).toContain('novamente');
+    botao.click();
+    expect(handlers.onDownloadItem).toHaveBeenCalledWith('p:1');
+  });
+
+  it('deixa rebaixar o PDF sem refazer a consulta', () => {
+    const { container, handlers } = painelDeDownload(new Set());
+    const linha = container.querySelector('.download-list--relatorio .download-list__item');
+    expect(linha.dataset.baixado).toBe('true');
+    expect(linha.textContent).toContain('Relatório PDF');
+
+    const botao = linha.querySelector('button');
+    expect(botao.getAttribute('aria-label')).toContain('relatorio_abc.pdf');
+    botao.click();
+    expect(handlers.onDownloadReport).toHaveBeenCalledOnce();
+    // e nao se confunde com as fotografias
+    expect(handlers.onDownloadItem).not.toHaveBeenCalled();
+  });
+
+  it('nao conta o PDF entre as fotografias', () => {
+    const { container } = painelDeDownload(new Set(['p:1', 'p:2']));
+    expect(container.textContent).toContain('2 de 2 fotografia(s) baixada(s)');
+    // a lista de fotografias tem 2 linhas, o relatorio vive em lista propria
+    expect(linhasDeFoto(container)).toHaveLength(2);
+  });
+
+  it('avisa quando todas foram baixadas', () => {
+    const { container } = painelDeDownload(new Set(['p:1', 'p:2']));
+    expect(container.querySelector('.download-workflow__complete').textContent)
+      .toContain('Todas as 2');
   });
 });

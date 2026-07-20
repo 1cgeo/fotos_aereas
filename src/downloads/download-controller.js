@@ -75,9 +75,16 @@ export function createDownloadController({ config, store }) {
     }
   }
 
+  // O PDF gerado fica guardado para poder ser baixado de novo. Sem isto, o
+  // relatório só existia no instante em que era gerado: se o download falhasse
+  // ou o usuário perdesse o arquivo, a única saída era refazer a consulta
+  // inteira. Guardamos os BYTES, não a URL, porque a object URL é revogada.
+  let relatorio = null;
+
   return Object.freeze({
     async start(query) {
       if (!query.results.length) return;
+      relatorio = null;
       const snapshot = createReportSnapshot({ config, query });
       setDownloadState(store, {
         snapshotId: snapshot.id,
@@ -85,34 +92,47 @@ export function createDownloadController({ config, store }) {
         reportStatus: 'generating',
         error: null,
         items: snapshot.items,
-        currentIndex: 0
+        baixados: new Set()
       });
       try {
         const { generateDownloadReport } = await import('./pdf-report.js');
         const comMapa = { ...snapshot, basemap: await capturaFundo(snapshot) };
         const bytes = await generateDownloadReport(comMapa);
-        triggerBlobDownload(bytes, `relatorio_fotos_aereas_${snapshot.id.slice(0, 8)}.pdf`);
-        setDownloadState(store, { reportStatus: 'ready' });
+        relatorio = { bytes, filename: `relatorio_fotos_aereas_${snapshot.id.slice(0, 8)}.pdf` };
+        triggerBlobDownload(bytes, relatorio.filename);
+        setDownloadState(store, { reportStatus: 'ready', reportFilename: relatorio.filename });
       } catch (error) {
         setDownloadState(store, { reportStatus: 'error', error });
       }
     },
-    downloadNext() {
+    // Baixa UMA foto, identificada pela chave. Marcar como baixada é registro do
+    // que o usuário acionou, nunca trava: repetir o clique rebaixa, que é o que
+    // salva quem perdeu o arquivo por queda de conexão.
+    downloadItem(key) {
       const downloads = store.getState().downloads;
-      const item = downloads.items[downloads.currentIndex];
+      const item = downloads.items.find((candidate) => candidate.key === key);
       if (!item) return false;
       triggerUrlDownload(item.downloadUrl, item.downloadFilename);
-      setDownloadState(store, { currentIndex: downloads.currentIndex + 1 });
+      setDownloadState(store, { baixados: new Set(downloads.baixados).add(key) });
+      return true;
+    },
+    // Rebaixa o PDF já gerado, sem refazer o relatório: é o mesmo arquivo, então
+    // o que o usuário conferir bate com o que já tinha em mãos.
+    downloadReport() {
+      if (!relatorio) return false;
+      triggerBlobDownload(relatorio.bytes, relatorio.filename);
       return true;
     },
     reset() {
+      relatorio = null;
       setDownloadState(store, {
         snapshotId: null,
         snapshot: null,
         reportStatus: 'idle',
         error: null,
+        reportFilename: null,
         items: [],
-        currentIndex: 0
+        baixados: new Set()
       });
     }
   });

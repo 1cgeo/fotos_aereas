@@ -278,7 +278,7 @@ Adaptações deliberadas:
     snapshotId: null,
     reportStatus: 'idle | generating | ready | error',
     items: [],
-    currentIndex: 0
+    baixados: new Set() // chaves ja acionadas; permite rebaixar
   }
 }
 ```

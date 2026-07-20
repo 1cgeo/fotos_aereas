@@ -546,6 +546,21 @@
   color: var(--color-text-muted);
 }
 
+/* O aviso da importação precisa ser dispensável com o mouse, ao contrário do
+   guia das ferramentas, que é passivo. */
+.map-guidance--import {
+  pointer-events: auto;
+  border-color: #7c3aed;
+}
+
+.map-guidance--import[data-erro='true'] {
+  border-color: var(--color-danger);
+}
+
+.map-guidance--import[data-erro='true'] strong {
+  color: var(--color-danger);
+}
+
 .query-panel__title {
   margin: 0;
 }
@@ -842,6 +857,58 @@
 .download-workflow__complete {
   color: var(--color-success);
   font-weight: 700;
+}
+
+.download-workflow__contagem {
+  font-weight: 700;
+}
+
+.download-list {
+  display: grid;
+  gap: 0.3rem;
+  max-height: 22rem;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.download-list__item {
+  display: grid;
+  gap: 0.1rem;
+}
+
+/* O relatorio nao rola junto com as fotografias: e um item so, sempre visivel. */
+.download-list--relatorio {
+  max-height: none;
+  margin-bottom: 0.2rem;
+  overflow: visible;
+}
+
+.download-list__button {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+}
+
+.download-list__marca {
+  flex: none;
+  font-weight: 800;
+}
+
+.download-list__nome {
+  overflow-wrap: anywhere;
+}
+
+.download-list__item[data-baixado='true'] .download-list__marca {
+  color: var(--color-success);
+}
+
+.download-list__estado {
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
 }
 
 .download-workflow__step {

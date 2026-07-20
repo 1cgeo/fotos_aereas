@@ -94,16 +94,20 @@ function resultCard(result, handlers) {
 }
 
 function newSearchBlock(query, handlers) {
-  const polygon = query.geometry?.geometry?.type === 'Polygon';
+  const tipo = query.geometry?.geometry?.type;
+  const polygon = tipo === 'Polygon';
+  const importado = tipo === 'GeometryCollection';
   const section = element('section', 'query-next-search');
   section.append(
     element('strong', 'query-next-search__title', 'Continue pesquisando'),
     element(
       'p',
       'query-next-search__text',
-      polygon
-        ? 'Desenhe outra área para substituir estes resultados.'
-        : 'Clique em outro ponto do mapa para substituir estes resultados.'
+      importado
+        ? 'Clique no mapa ou importe outro arquivo para substituir estes resultados.'
+        : polygon
+          ? 'Desenhe outra área para substituir estes resultados.'
+          : 'Clique em outro ponto do mapa para substituir estes resultados.'
     )
   );
   const button = element('button', 'button button--secondary query-next-search__button', polygon ? 'Desenhar nova área' : 'Escolher outro ponto');
@@ -113,19 +117,50 @@ function newSearchBlock(query, handlers) {
   return section;
 }
 
+// O aviso falado é SÓ a contagem. Marcar a seção inteira como aria-live faria o
+// leitor de tela reler a lista de fotografias a cada clique, que com centenas de
+// resultados é inutilizável.
+function contagem(texto) {
+  const p = element('p', 'download-workflow__contagem', texto);
+  p.setAttribute('aria-live', 'polite');
+  return p;
+}
+
+// Uma linha baixável: serve tanto ao relatório quanto a cada fotografia. Nunca
+// desabilita, porque baixar de novo é justamente o que o usuário precisa quando
+// a conexão cai no meio.
+function linhaDeDownload({ rotulo, arquivo, baixado, estado, onClick, classe = '' }) {
+  const linha = element('li', `download-list__item ${classe}`.trim());
+  if (baixado) linha.dataset.baixado = 'true';
+
+  const button = element('button', `button ${baixado ? 'button--secondary' : 'button--primary'} download-list__button`);
+  button.type = 'button';
+  button.append(
+    element('span', 'download-list__marca', baixado ? '✓' : '↓'),
+    element('span', 'download-list__nome', rotulo)
+  );
+  button.setAttribute('aria-label', baixado ? `Baixar novamente ${arquivo}` : `Baixar ${arquivo}`);
+  button.addEventListener('click', onClick);
+
+  linha.append(button);
+  if (baixado) linha.append(element('small', 'download-list__estado', estado));
+  return linha;
+}
+
 function downloadWorkflow(downloads, handlers) {
   const section = element('section', 'download-workflow');
-  section.setAttribute('aria-live', 'polite');
   if (downloads.reportStatus === 'generating') {
     section.setAttribute('aria-busy', 'true');
     section.append(
       element('span', 'download-workflow__step', 'Etapa 1 de 2'),
-      element('p', null, 'Gerando o PDF de conferência…')
+      contagem('Gerando o PDF de conferência…')
     );
     return section;
   }
   if (downloads.reportStatus === 'error') {
-    section.append(element('p', 'inline-error', 'Não foi possível gerar o relatório. Nenhuma imagem foi iniciada.'));
+    const falha = element('p', 'inline-error', 'Não foi possível gerar o relatório. Nenhuma imagem foi iniciada.');
+    falha.setAttribute('aria-live', 'polite');
+    section.append(falha);
     const retry = element('button', 'button button--primary', 'Tentar gerar novamente');
     retry.type = 'button';
     retry.addEventListener('click', handlers.onDownloadAll);
@@ -135,19 +170,44 @@ function downloadWorkflow(downloads, handlers) {
   if (downloads.reportStatus !== 'ready') return section;
 
   const total = downloads.items.length;
-  const current = downloads.currentIndex;
+  const baixados = downloads.baixados || new Set();
   section.append(
     element('span', 'download-workflow__step', 'Etapa 2 de 2'),
-    element('p', 'download-workflow__report', 'PDF gerado. Baixe agora cada fotografia individualmente.')
+    element('p', 'download-workflow__report', 'PDF gerado. Baixe cada fotografia na ordem que quiser.')
   );
-  if (current < total) {
-    const next = downloads.items[current];
-    const button = element('button', 'button button--primary', `Baixar próxima (${current + 1} de ${total})`);
-    button.type = 'button';
-    button.addEventListener('click', handlers.onDownloadNext);
-    section.append(button, element('small', null, next.downloadFilename));
-  } else {
-    section.append(element('p', 'download-workflow__complete', `Fila concluída: ${total} fotografia(s) acionada(s).`));
+
+  // O relatório também ganha a sua linha. Ele é disparado sozinho ao ficar
+  // pronto, mas isso acontece UMA vez: sem este botão, quem perdesse o arquivo
+  // teria de refazer a consulta inteira só para reaver o PDF.
+  const listaRelatorio = element('ul', 'download-list download-list--relatorio');
+  listaRelatorio.append(linhaDeDownload({
+    rotulo: 'Relatório PDF de conferência',
+    arquivo: downloads.reportFilename || 'relatorio.pdf',
+    baixado: true,
+    estado: 'Gerado e baixado. Clique para baixar de novo.',
+    onClick: () => handlers.onDownloadReport?.()
+  }));
+  section.append(listaRelatorio);
+
+  section.append(contagem(`${baixados.size} de ${total} fotografia(s) baixada(s).`));
+
+  // Uma linha por fotografia, em vez de um botão "próxima". A fila sequencial
+  // não dizia o que já tinha vindo e, pior, não deixava repetir a foto cuja
+  // conexão caiu: o cursor já tinha passado dela.
+  const lista = element('ul', 'download-list');
+  for (const item of downloads.items) {
+    lista.append(linhaDeDownload({
+      rotulo: item.title || item.downloadFilename,
+      arquivo: item.downloadFilename,
+      baixado: baixados.has(item.key),
+      estado: 'Baixada. Clique para baixar de novo.',
+      onClick: () => handlers.onDownloadItem?.(item.key)
+    }));
+  }
+  section.append(lista);
+
+  if (total && baixados.size === total) {
+    section.append(element('p', 'download-workflow__complete', `Todas as ${total} fotografia(s) foram baixadas.`));
   }
   return section;
 }

@@ -33,8 +33,11 @@ export function createInitialState(config) {
       snapshot: null,
       reportStatus: 'idle',
       error: null,
+      reportFilename: null,
       items: [],
-      currentIndex: 0
+      // Quais chaves JÁ foram acionadas. É um conjunto, não um cursor: a fila
+      // sequencial impedia rebaixar uma foto cuja conexão caiu no meio.
+      baixados: new Set()
     }
   };
 }
