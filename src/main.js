@@ -19,7 +19,10 @@ async function bootstrap() {
   renderLoadingScreen(root, 'Carregando catálogo…');
 
   try {
-    const configUrl = new URL(`${import.meta.env.BASE_URL}config.js`, window.location.origin);
+    // Resolve contra a PÁGINA, não contra a raiz do host: assim o portal funciona
+    // servido num subcaminho (http://host/fotos_aereas/) e não só na raiz.
+    // Contra o origin, um base relativo buscaria o catálogo na raiz do servidor.
+    const configUrl = new URL(`${import.meta.env.BASE_URL}config.js`, window.location.href);
     const config = await loadRuntimeConfig(configUrl);
     const store = createStore(createInitialState(config));
     const ui = renderAppShell(root, config, { themeController });
