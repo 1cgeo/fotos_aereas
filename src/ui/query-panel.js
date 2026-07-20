@@ -159,16 +159,52 @@ const LOTE_RESULTADOS = 40;
 let observadorAtual = null;
 
 function resultList(query, handlers) {
-  const list = element('ol', 'query-result-list');
+  const list = element('div', 'query-result-list');
   const total = query.results.length;
   let renderizados = 0;
-  let ultimoProjetoId = null;
 
-  const sentinela = element('li', 'query-result-sentinel');
+  // Um grupo COLAPSÁVEL por aerolevantamento. Com vários voos respondendo, a
+  // lista corrida obriga a rolar por um voo inteiro para chegar ao seguinte.
+  const porProjeto = new Map();
+  for (const r of query.results) {
+    if (!porProjeto.has(r.projectId)) porProjeto.set(r.projectId, { titulo: r.projectTitle, n: 0 });
+    porProjeto.get(r.projectId).n += 1;
+  }
+
+  function grupoDe(result) {
+    const existente = porProjeto.get(result.projectId);
+    if (existente.secao) return existente;
+    const secao = element('section', 'query-result-group');
+    const cabecalho = element('button', 'query-result-group__toggle');
+    cabecalho.type = 'button';
+    cabecalho.setAttribute('aria-expanded', 'true');
+    const seta = element('span', 'query-result-group__seta', '▾');
+    seta.setAttribute('aria-hidden', 'true');
+    cabecalho.append(
+      seta,
+      element('span', 'query-result-group__titulo', existente.titulo),
+      element('span', 'query-result-group__contagem',
+        existente.n === 1 ? '1 fotografia' : `${existente.n} fotografias`)
+    );
+    const itens = element('ol', 'query-result-group__itens');
+    cabecalho.addEventListener('click', () => {
+      const aberto = cabecalho.getAttribute('aria-expanded') === 'true';
+      cabecalho.setAttribute('aria-expanded', String(!aberto));
+      itens.hidden = aberto;
+      seta.textContent = aberto ? '▸' : '▾';
+    });
+    secao.append(cabecalho, itens);
+    list.insertBefore(secao, sentinela);
+    existente.secao = secao;
+    existente.itens = itens;
+    return existente;
+  }
+
+  const sentinela = element('div', 'query-result-sentinel');
   sentinela.setAttribute('aria-hidden', 'true');
   list.append(sentinela);
 
-  const contador = element('li', 'query-result-progresso');
+  const contador = element('p', 'query-result-progresso');
   contador.setAttribute('aria-live', 'polite');
 
   function atualizaContador() {
@@ -181,14 +217,7 @@ function resultList(query, handlers) {
     const fim = Math.min(renderizados + LOTE_RESULTADOS, total);
     for (let indice = renderizados; indice < fim; indice += 1) {
       const result = query.results[indice];
-      if (result.projectId !== ultimoProjetoId) {
-        const heading = element('li', 'query-result-group', result.projectTitle);
-        heading.setAttribute('role', 'heading');
-        heading.setAttribute('aria-level', '4');
-        list.insertBefore(heading, sentinela);
-        ultimoProjetoId = result.projectId;
-      }
-      list.insertBefore(resultCard(result, handlers), sentinela);
+      grupoDe(result).itens.append(resultCard(result, handlers));
     }
     renderizados = fim;
     atualizaContador();
@@ -259,11 +288,21 @@ export function renderQueryPanel(container, query, downloads, handlers) {
   } else if (query.status === 'error') {
     content.append(element('p', 'inline-error', 'Não foi possível concluir a consulta.'), newSearchBlock(query, handlers));
   } else {
+    const totalProjetos = new Set(query.results.map((r) => r.projectId)).size;
     const summary = element('div', 'query-summary');
     summary.append(
       element('strong', 'query-summary__count', String(query.results.length)),
       element('span', 'query-summary__label', query.results.length === 1 ? 'fotografia encontrada' : 'fotografias encontradas')
     );
+    // Quantos VOOS responderam importa tanto quanto quantas fotos: diz ao usuário
+    // se a área cai num levantamento só ou se há mais de uma época disponível.
+    if (totalProjetos > 0) {
+      summary.append(element(
+        'span',
+        'query-summary__projects',
+        totalProjetos === 1 ? 'em 1 aerolevantamento' : `em ${totalProjetos} aerolevantamentos`
+      ));
+    }
     content.append(summary);
     if (query.projectErrors.length > 0) {
       content.append(element('p', 'query-warning', `${query.projectErrors.length} projeto(s) não puderam ser consultados.`));

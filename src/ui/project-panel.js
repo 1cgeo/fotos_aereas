@@ -5,12 +5,14 @@ function element(tagName, className, text) {
   return node;
 }
 
+// Só se anuncia o que o usuário precisa saber: que a grade está sendo buscada,
+// que falhou, ou que está visível. "Pronto" e "Não carregado" descrevem o cache
+// interno, não o que ele vê no mapa, e ocupavam a linha à toa.
 function loadLabel(loadState, active) {
   if (loadState?.status === 'loading') return 'Carregando grade…';
   if (loadState?.status === 'error') return 'Erro ao carregar';
   if (active) return 'Grade visível';
-  if (loadState?.status === 'ready') return 'Pronto';
-  return 'Não carregado';
+  return null;
 }
 
 export function renderProjectsView(container, config, state, handlers) {
@@ -67,11 +69,14 @@ export function renderProjectsView(container, config, state, handlers) {
 
     const summary = element('p', 'project-card__summary', project.summary);
     const footer = element('div', 'project-card__footer');
+    const rotulo = loadLabel(loadState, active);
     const statusName = loadState?.status === 'error' ? 'error' : active ? 'active' : loadState?.status || 'idle';
     const status = element('span', `project-status project-status--${statusName}`);
-    const statusDot = element('span', 'project-status__dot');
-    statusDot.setAttribute('aria-hidden', 'true');
-    status.append(statusDot, element('span', null, loadLabel(loadState, active)));
+    if (rotulo) {
+      const statusDot = element('span', 'project-status__dot');
+      statusDot.setAttribute('aria-hidden', 'true');
+      status.append(statusDot, element('span', null, rotulo));
+    }
     const details = element('button', 'button-link project-card__details', 'Ver detalhes →');
     details.type = 'button';
     details.addEventListener('click', () => handlers.onDetails(project.id));

@@ -730,12 +730,55 @@
 }
 
 .query-result-group {
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.query-result-group__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.query-result-group__toggle:hover {
+  border-color: var(--color-border-strong);
+}
+
+.query-result-group__seta {
+  flex: 0 0 auto;
   color: var(--color-text-muted);
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+}
+
+.query-result-group__titulo {
+  flex: 1 1 auto;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.query-result-group__contagem {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.query-result-group__itens {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.query-result-group__itens[hidden] {
+  display: none;
 }
 
 .query-download-all {
@@ -767,6 +810,12 @@
 }
 
 .query-summary__label {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.query-summary__projects {
+  margin-left: auto;
   color: var(--color-text-muted);
   font-size: 0.85rem;
 }

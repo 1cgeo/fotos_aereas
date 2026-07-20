@@ -39,6 +39,69 @@ describe('painel de resultados', () => {
     expect(link.getAttribute('download')).toBe('photo.tif');
   });
 
+  function resultado(projectId, projectTitle, n) {
+    return {
+      ...result(),
+      key: `${projectId}:${n}`, projectId, projectTitle, photoId: String(n),
+      title: `Foto ${n} - ${projectTitle}`
+    };
+  }
+
+  function renderiza(results) {
+    const container = document.createElement('div');
+    const handlers = {
+      onClear: vi.fn(), onCancel: vi.fn(), onHighlight: vi.fn(), onClearHighlight: vi.fn(),
+      onDownloadAll: vi.fn(), onDownloadNext: vi.fn(), onNewSearch: vi.fn(),
+      onSelect: vi.fn(), selectedResultKey: null
+    };
+    renderQueryPanel(container, { status: 'ready', results, projectErrors: [] },
+      { reportStatus: 'idle', items: [], currentIndex: 0 }, handlers);
+    return container;
+  }
+
+  it('conta os aerolevantamentos, nao so as fotografias', () => {
+    const um = renderiza([resultado('a', 'Voo A', 1), resultado('a', 'Voo A', 2)]);
+    expect(um.textContent).toContain('em 1 aerolevantamento');
+
+    const dois = renderiza([
+      resultado('a', 'Voo A', 1), resultado('a', 'Voo A', 2), resultado('b', 'Voo B', 3)
+    ]);
+    expect(dois.textContent).toContain('em 2 aerolevantamentos');
+  });
+
+  it('agrupa por aerolevantamento, com a contagem de cada um', () => {
+    const container = renderiza([
+      resultado('a', 'Voo A', 1), resultado('a', 'Voo A', 2), resultado('b', 'Voo B', 3)
+    ]);
+    const grupos = container.querySelectorAll('.query-result-group');
+    expect(grupos).toHaveLength(2);
+    const titulos = [...container.querySelectorAll('.query-result-group__titulo')].map((n) => n.textContent);
+    expect(titulos).toEqual(['Voo A', 'Voo B']);
+    const contagens = [...container.querySelectorAll('.query-result-group__contagem')].map((n) => n.textContent);
+    expect(contagens).toEqual(['2 fotografias', '1 fotografia']);
+  });
+
+  it('colapsa e reabre um grupo sem afetar os outros', () => {
+    const container = renderiza([
+      resultado('a', 'Voo A', 1), resultado('b', 'Voo B', 2)
+    ]);
+    const [primeiro, segundo] = container.querySelectorAll('.query-result-group');
+    const alterna = primeiro.querySelector('.query-result-group__toggle');
+    const itens = primeiro.querySelector('.query-result-group__itens');
+
+    expect(alterna.getAttribute('aria-expanded')).toBe('true');
+    expect(itens.hidden).toBe(false);
+
+    alterna.click();
+    expect(alterna.getAttribute('aria-expanded')).toBe('false');
+    expect(itens.hidden).toBe(true);
+    expect(segundo.querySelector('.query-result-group__itens').hidden).toBe(false);
+
+    alterna.click();
+    expect(alterna.getAttribute('aria-expanded')).toBe('true');
+    expect(itens.hidden).toBe(false);
+  });
+
   it('mostra progresso da fila individual', () => {
     const container = document.createElement('div');
     const handlers = {
