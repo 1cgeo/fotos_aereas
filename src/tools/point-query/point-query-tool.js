@@ -41,11 +41,14 @@ function createGuidance() {
  * do mapa, e não uma ferramenta que o usuário liga. Nesse modo não há aviso fixo
  * sobre o mapa nem cursor de mira: clicar consulta, e o mapa segue sendo um mapa.
  */
-export function createPointQueryTool({ map, runner, store, asDefault = false }) {
+export function createPointQueryTool({ map, runner, store, asDefault = false, onNewQuery = null }) {
   let scope = null;
   const handleClick = (event) => {
     const { lng, lat } = event.lngLat || {};
     if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
+    // Cada clique substitui a busca anterior por inteiro, inclusive a geometria
+    // de uma consulta por área que ainda estivesse desenhada no mapa.
+    onNewQuery?.();
     const point = {
       type: 'Feature',
       properties: {},

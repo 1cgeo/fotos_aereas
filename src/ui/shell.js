@@ -73,7 +73,12 @@ export function renderAppShell(root, config, { themeController }) {
     createElement('span', 'app-title__long', config.site.title),
     createElement('span', 'app-title__short', config.site.shortTitle)
   );
-  identityText.append(createElement('span', 'app-kicker', 'Acervo cartográfico'), appTitle);
+  // Linha institucional acima do titulo. Vem do catalogo para que cada instalacao
+  // se identifique sem alterar o codigo.
+  const kicker = typeof config.site.kicker === 'string' && config.site.kicker.trim()
+    ? config.site.kicker.trim()
+    : 'Acervo cartográfico';
+  identityText.append(createElement('span', 'app-kicker', kicker), appTitle);
   identity.append(mark, identityText);
   const themeSelector = createThemeSelector(themeController);
   header.append(identity, themeSelector.element);

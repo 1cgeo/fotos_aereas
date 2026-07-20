@@ -50,12 +50,34 @@ export async function initializeApplication({ config, store, ui, themeController
   const runner = createAnalysisRunner({ config, store, repository, registry });
   const downloads = createDownloadController({ config, store });
   const toolManager = createToolManager(store);
-  const pointTool = toolManager.register(createPointQueryTool({ map, runner, store, asDefault: true }));
-  const polygonTool = toolManager.register(createPolygonQueryTool({
+  // Uma busca nova apaga a anterior por inteiro: resultados, realce, fila de
+  // download e a geometria da OUTRA ferramenta. Sem isso, o polígono da consulta
+  // passada continua desenhado depois de um clique por ponto, e vice-versa.
+  let pointTool = null;
+  let polygonTool = null;
+  function prepararNovaBusca(origem) {
+    selectedResultKey = null;
+    revealedQueryId = null;
+    downloads.reset();
+    clearResultHighlight(map);
+    clearQueryResults(map);
+    if (origem !== 'point') pointTool?.clearGeometry();
+    if (origem !== 'polygon') polygonTool?.clearGeometry();
+  }
+
+  pointTool = toolManager.register(createPointQueryTool({
     map,
     runner,
     store,
-    maxVertices: config.site.maxDrawingVertices
+    asDefault: true,
+    onNewQuery: () => prepararNovaBusca('point')
+  }));
+  polygonTool = toolManager.register(createPolygonQueryTool({
+    map,
+    runner,
+    store,
+    maxVertices: config.site.maxDrawingVertices,
+    onNewQuery: () => prepararNovaBusca('polygon')
   }));
 
   function clearQuery() {
@@ -75,6 +97,18 @@ export async function initializeApplication({ config, store, ui, themeController
   // enchia o mapa com todos os footprints do voo, e não com o que respondeu.
   function showIntersectedFootprints(state) {
     showQueryResults(map, state.query.results, projectColors);
+  }
+
+  // Durante uma consulta, o mapa mostra SÓ o que a consulta encontrou, mesmo dos
+  // projetos ligados. A grade cheia de um voo ligado competiria visualmente com o
+  // resultado e esconderia justamente a resposta que o usuário pediu. Ao limpar a
+  // busca, os projetos ligados voltam a aparecer.
+  function aplicarVisibilidadeDosProjetos(state) {
+    const consultando = state.query.status !== 'idle';
+    for (const project of config.projects) {
+      const ligado = state.projects.activeIds.has(project.id);
+      setProjectVisibility(map, project.id, ligado && !consultando);
+    }
   }
 
   function restoreSelectedHighlight() {
@@ -237,6 +271,7 @@ export async function initializeApplication({ config, store, ui, themeController
       revealedQueryId = state.query.queryId;
       showIntersectedFootprints(state);
     }
+    aplicarVisibilidadeDosProjetos(state);
     updateScope();
     toolbar.update(state);
     renderPanel();

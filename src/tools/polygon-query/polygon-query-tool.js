@@ -71,7 +71,7 @@ function coordinateFromEvent(event) {
   return Number.isFinite(lng) && Number.isFinite(lat) ? [lng, lat] : null;
 }
 
-export function createPolygonQueryTool({ map, runner, store, maxVertices = 500 }) {
+export function createPolygonQueryTool({ map, runner, store, maxVertices = 500, onNewQuery = null }) {
   const model = createPolygonDrawingModel();
   let scope = null;
   let controls = null;
@@ -126,9 +126,20 @@ export function createPolygonQueryTool({ map, runner, store, maxVertices = 500 }
   }
 
   function onClick(event) {
-    if (model.state === 'complete' || model.state === 'editing') return;
+    if (model.state === 'editing') return;
     const coordinate = coordinateFromEvent(event);
     if (!coordinate) return;
+    // Área já concluída: o clique começa OUTRA busca, descartando a atual, em vez
+    // de não fazer nada. É o mesmo gesto da consulta por ponto, onde cada clique
+    // substitui a busca anterior.
+    if (model.state === 'complete') {
+      onNewQuery?.();
+      clearAll(true);
+      model.add(coordinate);
+      preview = null;
+      render();
+      return;
+    }
     if (model.vertices.length >= 3) {
       const firstPoint = map.project(model.vertices[0]);
       const distance = Math.hypot(event.point.x - firstPoint.x, event.point.y - firstPoint.y);
@@ -232,6 +243,10 @@ export function createPolygonQueryTool({ map, runner, store, maxVertices = 500 }
       const status = store.getState().query.status;
       if (status === 'loading-projects' || status === 'running') runner.cancel();
       if (model.state === 'editing') model.cancelEdit();
+      // Desenho pela metade não sobrevive à saída da ferramenta: sem isto, os
+      // vértices e a linha de preview ficam no mapa sem nada que os controle.
+      if (model.state === 'drawing') model.clear();
+      preview = null;
       scope?.cleanup();
       scope = null;
       controls = null;
