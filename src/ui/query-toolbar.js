@@ -14,18 +14,18 @@ function button(label, className = 'tool-button', shortLabel = label) {
   return node;
 }
 
+// A consulta por ponto não tem botão: clicar no mapa já consulta, sempre. Só o
+// desenho de área é um modo, porque muda o que o clique faz.
 export function createQueryToolbar(container, scopeElement, handlers) {
   const tools = document.createElement('div');
   tools.className = 'tool-buttons';
-  const pointButton = button('Consultar ponto', 'tool-button', 'Ponto');
   const polygonButton = button('Desenhar área', 'tool-button', 'Área');
   const clearButton = button('Limpar consulta', 'tool-button tool-button--quiet', 'Limpar');
-  pointButton.addEventListener('click', () => handlers.onActivate('point-query'));
   polygonButton.addEventListener('click', () => {
     if (!polygonButton.disabled) handlers.onActivate('polygon-query');
   });
   clearButton.addEventListener('click', handlers.onClear);
-  tools.append(pointButton, polygonButton, clearButton);
+  tools.append(polygonButton, clearButton);
 
   const activeChip = document.createElement('div');
   activeChip.className = 'active-tool-chip';
@@ -45,15 +45,14 @@ export function createQueryToolbar(container, scopeElement, handlers) {
   return Object.freeze({
     update(state) {
       const activeId = state.tools.activeToolId;
-      pointButton.setAttribute('aria-pressed', String(activeId === 'point-query'));
-      pointButton.classList.toggle('tool-button--active', activeId === 'point-query');
-      polygonButton.setAttribute('aria-pressed', String(activeId === 'polygon-query'));
-      polygonButton.classList.toggle('tool-button--active', activeId === 'polygon-query');
+      const desenhando = activeId === 'polygon-query';
+      polygonButton.setAttribute('aria-pressed', String(desenhando));
+      polygonButton.classList.toggle('tool-button--active', desenhando);
       clearButton.disabled = state.query.status === 'idle';
-      activeChip.hidden = !activeId;
-      activeLabel.textContent = activeId === 'point-query'
-        ? 'Ferramenta ativa: Consultar ponto'
-        : activeId === 'polygon-query' ? 'Ferramenta ativa: Desenhar área' : '';
+      // O chip só anuncia o desenho de área: a consulta por ponto é o padrão, e
+      // padrão não é modo ativo a ser exibido nem desligado.
+      activeChip.hidden = !desenhando;
+      activeLabel.textContent = desenhando ? 'Ferramenta ativa: Desenhar área' : '';
     },
     setPolygonEnabled(enabled) {
       polygonButton.disabled = !enabled;

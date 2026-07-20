@@ -50,7 +50,7 @@ export async function initializeApplication({ config, store, ui, themeController
   const runner = createAnalysisRunner({ config, store, repository, registry });
   const downloads = createDownloadController({ config, store });
   const toolManager = createToolManager(store);
-  const pointTool = toolManager.register(createPointQueryTool({ map, runner, store }));
+  const pointTool = toolManager.register(createPointQueryTool({ map, runner, store, asDefault: true }));
   const polygonTool = toolManager.register(createPolygonQueryTool({
     map,
     runner,
@@ -107,12 +107,23 @@ export async function initializeApplication({ config, store, ui, themeController
     if (window.matchMedia?.('(max-width: 900px)').matches) ui.setSidebarCollapsed?.(true);
   }
 
+  // A consulta por ponto é o comportamento PADRÃO do mapa, não uma ferramenta a
+  // ligar: sempre que nenhum modo estiver ativo, ela volta a valer. Só o desenho
+  // de área é modo, porque muda o que o clique faz.
+  function retomarPadrao() {
+    if (!toolManager.getActiveTool()) toolManager.activate('point-query');
+  }
+
   const toolbar = createQueryToolbar(ui.toolbar, ui.scope, {
     onActivate: (toolId) => {
       if (toolManager.getActiveTool()?.id !== toolId) clearQuery();
       toolManager.activate(toolId);
+      retomarPadrao();
     },
-    onDeactivate: () => toolManager.deactivate('chip'),
+    onDeactivate: () => {
+      toolManager.deactivate('chip');
+      retomarPadrao();
+    },
     onClear: clearQuery
   });
 
@@ -215,6 +226,7 @@ export async function initializeApplication({ config, store, ui, themeController
   updateScope();
   toolbar.update(store.getState());
   toolbar.setPolygonEnabled(true);
+  retomarPadrao();
   const unsubscribe = store.subscribe((state) => {
     if (state.query.status === 'idle' || state.query.status === 'loading-projects') {
       selectedResultKey = null;
@@ -236,7 +248,10 @@ export async function initializeApplication({ config, store, ui, themeController
     if (event.key !== 'Escape') return;
     const status = store.getState().query.status;
     if (status === 'loading-projects' || status === 'running') runner.cancel();
-    else toolManager.deactivate('escape');
+    else {
+      toolManager.deactivate('escape');
+      retomarPadrao();
+    }
   };
   document.addEventListener('keydown', handleKeyDown);
 

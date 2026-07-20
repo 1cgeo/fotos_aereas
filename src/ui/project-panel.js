@@ -22,8 +22,8 @@ export function renderProjectsView(container, config, state, handlers) {
   const steps = element('ol', 'catalog-guide__steps');
   const guidance = [
     ['1', 'Defina o escopo', 'Ligue os voos desejados. Sem nenhum ligado, a busca consulta todos.'],
-    ['2', 'Escolha a ferramenta', 'Use Ponto para um local ou Área para desenhar uma região.'],
-    ['3', 'Consulte o mapa', 'Cada novo clique ou desenho substitui a busca anterior.']
+    ['2', 'Clique no mapa', 'O clique já consulta o ponto e devolve todas as fotografias que o cobrem.'],
+    ['3', 'Ou desenhe uma área', 'Use Área para consultar uma região inteira. Cada nova busca substitui a anterior.']
   ];
   for (const [number, title, description] of guidance) {
     const item = element('li', 'catalog-guide__step');

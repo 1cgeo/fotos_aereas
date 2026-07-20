@@ -36,7 +36,12 @@ function createGuidance() {
   return guidance;
 }
 
-export function createPointQueryTool({ map, runner, store }) {
+/**
+ * `asDefault` marca o modo em que a consulta por ponto é o comportamento padrão
+ * do mapa, e não uma ferramenta que o usuário liga. Nesse modo não há aviso fixo
+ * sobre o mapa nem cursor de mira: clicar consulta, e o mapa segue sendo um mapa.
+ */
+export function createPointQueryTool({ map, runner, store, asDefault = false }) {
   let scope = null;
   const handleClick = (event) => {
     const { lng, lat } = event.lngLat || {};
@@ -59,15 +64,17 @@ export function createPointQueryTool({ map, runner, store }) {
       if (scope) return;
       ensureLayer(map);
       scope = createCleanupScope();
-      const guidance = createGuidance();
-      map.getContainer().append(guidance);
-      scope.add(() => guidance.remove());
-      const canvas = map.getCanvas();
-      const previousCursor = canvas.style.cursor;
-      canvas.style.cursor = 'crosshair';
-      scope.add(() => {
-        canvas.style.cursor = previousCursor;
-      });
+      if (!asDefault) {
+        const guidance = createGuidance();
+        map.getContainer().append(guidance);
+        scope.add(() => guidance.remove());
+        const canvas = map.getCanvas();
+        const previousCursor = canvas.style.cursor;
+        canvas.style.cursor = 'crosshair';
+        scope.add(() => {
+          canvas.style.cursor = previousCursor;
+        });
+      }
       scope.mapOn(map, 'click', handleClick);
     },
     deactivate() {
