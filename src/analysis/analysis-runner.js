@@ -1,5 +1,5 @@
 import { cacheProjectData, setDownloadState, setProjectLoadState, updateQuery } from '../app/actions.js';
-import { resolveQueryScope } from './query-scope.js';
+import { narrowScopeByCoverage, resolveQueryScope } from './query-scope.js';
 import { deduplicateAndSortResults, normalizeAnalysisResult } from './result-normalizer.js';
 
 function createQueryId() {
@@ -46,7 +46,8 @@ export function createAnalysisRunner({ config, store, repository, registry }) {
       const controller = new AbortController();
       currentController = controller;
       const queryId = createQueryId();
-      const scope = resolveQueryScope(config, store.getState().projects.activeIds);
+      const activeIds = store.getState().projects.activeIds;
+      let scope = resolveQueryScope(config, activeIds);
       setDownloadState(store, {
         snapshotId: null,
         snapshot: null,
@@ -69,6 +70,23 @@ export function createAnalysisRunner({ config, store, repository, registry }) {
       let loadedCount = 0;
 
       try {
+        // Etapa 1, só quando a consulta varre o catálogo inteiro: descartar por
+        // COBERTURA os projetos que a geometria nem toca, antes de baixar grade.
+        // Com projeto ligado, o usuário já escolheu o escopo e não há o que reduzir.
+        if (activeIds.size === 0 && scope.length > 1) {
+          const filtrado = await narrowScopeByCoverage(scope, geometry, repository, controller.signal);
+          if (!isCurrent(queryId) || controller.signal.aborted) {
+            throw new DOMException('Consulta cancelada.', 'AbortError');
+          }
+          if (filtrado.scope.length > 0 && filtrado.scope.length < scope.length) {
+            scope = filtrado.scope;
+            updateQuery(store, {
+              scopeProjectIds: scope.map((project) => project.id),
+              progress: { stage: 'loading', current: 0, total: scope.length }
+            });
+          }
+        }
+
         const loaded = await mapWithConcurrency(
           scope,
           config.site.globalLoadConcurrency,

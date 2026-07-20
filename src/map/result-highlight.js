@@ -2,6 +2,10 @@ const SOURCE_ID = 'query:result-highlight';
 const FILL_LAYER_ID = 'query:result-highlight-fill';
 const LINE_LAYER_ID = 'query:result-highlight-line';
 
+// Exportado para que a camada de resultados da consulta possa se inserir ABAIXO
+// do realce individual, mantendo o item focado sempre por cima.
+export const HIGHLIGHT_FILL_LAYER_ID = FILL_LAYER_ID;
+
 function emptyCollection() {
   return { type: 'FeatureCollection', features: [] };
 }

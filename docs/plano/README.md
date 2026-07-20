@@ -29,6 +29,8 @@ O plano assume que metadados, grades de voo, miniaturas e arquivos para download
 
 Ligar um projeto controla sua visualização e o escopo da consulta. Não significa carregar a fotografia original no mapa.
 
+A partir de 2026-07-20, com o acervo real, a consulta sem projeto ligado deixa de carregar o catálogo inteiro e passa a ser resolvida em duas etapas, pela geometria de cobertura de cada projeto. A regra visível ao usuário não muda: continua sendo possível buscar em todos os projetos. Ver [Implantação na intranet do EB](12-implantacao-intranet-eb.md).
+
 ## Ordem de leitura
 
 1. [Visão do produto](01-visao-do-produto.md)
@@ -42,6 +44,7 @@ Ligar um projeto controla sua visualização e o escopo da consulta. Não signif
 9. [Testes e aceitação](09-testes-e-aceitacao.md)
 10. [Roteiro de implementação](10-roteiro-de-implementacao.md)
 11. [Decisões em aberto](11-decisoes-em-aberto.md)
+12. [Implantação na intranet do EB](12-implantacao-intranet-eb.md)
 
 ## O que significa concluir a primeira versão
 

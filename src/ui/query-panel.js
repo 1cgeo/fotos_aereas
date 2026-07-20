@@ -152,23 +152,83 @@ function downloadWorkflow(downloads, handlers) {
   return section;
 }
 
+// Uma área grande devolve milhares de fotografias, e cada resultado é um cartão
+// com miniatura. Montar tudo de uma vez trava o navegador, então a lista cresce
+// sob demanda: um lote entra quando o fim da lista se aproxima da tela.
+const LOTE_RESULTADOS = 40;
+let observadorAtual = null;
+
 function resultList(query, handlers) {
   const list = element('ol', 'query-result-list');
-  let lastProjectId = null;
-  for (const result of query.results) {
-    if (result.projectId !== lastProjectId) {
-      const heading = element('li', 'query-result-group', result.projectTitle);
-      heading.setAttribute('role', 'heading');
-      heading.setAttribute('aria-level', '4');
-      list.append(heading);
-      lastProjectId = result.projectId;
-    }
-    list.append(resultCard(result, handlers));
+  const total = query.results.length;
+  let renderizados = 0;
+  let ultimoProjetoId = null;
+
+  const sentinela = element('li', 'query-result-sentinel');
+  sentinela.setAttribute('aria-hidden', 'true');
+  list.append(sentinela);
+
+  const contador = element('li', 'query-result-progresso');
+  contador.setAttribute('aria-live', 'polite');
+
+  function atualizaContador() {
+    contador.textContent = renderizados >= total
+      ? `${total} de ${total} exibidas`
+      : `Exibindo ${renderizados} de ${total}. Role para carregar mais.`;
   }
+
+  function renderizaLote() {
+    const fim = Math.min(renderizados + LOTE_RESULTADOS, total);
+    for (let indice = renderizados; indice < fim; indice += 1) {
+      const result = query.results[indice];
+      if (result.projectId !== ultimoProjetoId) {
+        const heading = element('li', 'query-result-group', result.projectTitle);
+        heading.setAttribute('role', 'heading');
+        heading.setAttribute('aria-level', '4');
+        list.insertBefore(heading, sentinela);
+        ultimoProjetoId = result.projectId;
+      }
+      list.insertBefore(resultCard(result, handlers), sentinela);
+    }
+    renderizados = fim;
+    atualizaContador();
+    if (renderizados >= total) {
+      observadorAtual?.disconnect();
+      observadorAtual = null;
+      sentinela.remove();
+    }
+  }
+
+  list.append(contador);
+  renderizaLote();
+
+  if (renderizados < total) {
+    if (typeof IntersectionObserver === 'function') {
+      observadorAtual = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) renderizaLote();
+      }, { rootMargin: '600px 0px' });
+      observadorAtual.observe(sentinela);
+    } else {
+      // Sem IntersectionObserver, um botão explícito faz o mesmo papel.
+      const mais = element('button', 'button button--secondary', 'Carregar mais resultados');
+      mais.type = 'button';
+      mais.addEventListener('click', () => {
+        renderizaLote();
+        if (renderizados >= total) mais.remove();
+      });
+      list.append(mais);
+    }
+  }
+
   return list;
 }
 
 export function renderQueryPanel(container, query, downloads, handlers) {
+  // O painel é remontado por inteiro a cada render; solta o observador do
+  // render anterior para não deixar callback preso a DOM descartado.
+  observadorAtual?.disconnect();
+  observadorAtual = null;
+
   const header = element('div', 'query-panel__header');
   const back = element('button', 'button-link button-link--back', '← Voltar aos projetos');
   back.type = 'button';
@@ -207,6 +267,14 @@ export function renderQueryPanel(container, query, downloads, handlers) {
     content.append(summary);
     if (query.projectErrors.length > 0) {
       content.append(element('p', 'query-warning', `${query.projectErrors.length} projeto(s) não puderam ser consultados.`));
+    }
+    const limiteAviso = handlers.resultWarningThreshold;
+    if (Number.isFinite(limiteAviso) && query.results.length > limiteAviso) {
+      content.append(element(
+        'p',
+        'query-warning',
+        `A área consultada devolveu ${query.results.length} fotografias. Refine a área para um resultado mais manejável; a lista carrega aos poucos conforme você rola.`
+      ));
     }
     content.append(newSearchBlock(query, handlers));
     if (query.results.length === 0) {

@@ -69,7 +69,13 @@ function normalizeProject(project, index, configUrl, ids) {
     license,
     links: Object.freeze(links),
     data: Object.freeze({
-      footprintsUrl: resolvePublicUrl(project.data.footprintsUrl, configUrl, 'geojson').href
+      footprintsUrl: resolvePublicUrl(project.data.footprintsUrl, configUrl, 'geojson').href,
+      // Geometria de COBERTURA do voo: polígono único, pequeno, usado na primeira
+      // etapa da consulta para decidir quais projetos merecem ter a grade baixada.
+      // Opcional: projeto sem cobertura declarada entra sempre no escopo.
+      coverageUrl: project.data.coverageUrl
+        ? resolvePublicUrl(project.data.coverageUrl, configUrl, 'geojson').href
+        : null
     }),
     style: Object.freeze({
       color,

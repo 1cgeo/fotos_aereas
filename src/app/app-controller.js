@@ -13,6 +13,7 @@ import { polygonIntersectionAnalysis } from '../analysis/polygon-intersection.an
 import { createMap } from '../map/create-map.js';
 import { ensureProjectLayers, setProjectVisibility } from '../map/project-layers.js';
 import { clearResultHighlight, showResultHighlight } from '../map/result-highlight.js';
+import { clearQueryResults, showQueryResults } from '../map/query-result-layers.js';
 import { applyMapTheme } from '../map/map-theme.js';
 import { createDownloadController } from '../downloads/download-controller.js';
 import { renderProjectDetails, renderProjectsView } from '../ui/project-panel.js';
@@ -42,7 +43,7 @@ export async function initializeApplication({ config, store, ui, themeController
   let sidebarContext = null;
   let selectedResultKey = null;
   let revealedQueryId = null;
-  let revealedProjectIds = new Set();
+  const projectColors = new Map(config.projects.map((project) => [project.id, project.style.color]));
   const registry = createAnalysisRegistry();
   registry.register(pointIntersectionAnalysis);
   registry.register(polygonIntersectionAnalysis);
@@ -64,38 +65,16 @@ export async function initializeApplication({ config, store, ui, themeController
     downloads.reset();
     pointTool.clearGeometry();
     polygonTool.clearGeometry();
-    hideRevealedProjects();
+    clearQueryResults(map);
     clearResultHighlight(map);
     panelView = 'projects';
   }
 
-  function hideRevealedProjects() {
-    const { activeIds } = store.getState().projects;
-    for (const projectId of revealedProjectIds) {
-      if (!activeIds.has(projectId)) setProjectVisibility(map, projectId, false);
-    }
-    revealedProjectIds = new Set();
-  }
-
-  function revealIntersectedProjects(state) {
-    const { activeIds } = state.projects;
-    const intersectedIds = new Set(state.query.results.map((result) => result.projectId));
-    for (const projectId of revealedProjectIds) {
-      if (!intersectedIds.has(projectId) && !activeIds.has(projectId)) {
-        setProjectVisibility(map, projectId, false);
-      }
-    }
-    const nextRevealed = new Set();
-    for (const projectId of intersectedIds) {
-      if (activeIds.has(projectId)) continue;
-      const project = config.projects.find((item) => item.id === projectId);
-      const data = state.projects.dataById.get(projectId);
-      if (!project || !data) continue;
-      ensureProjectLayers(map, project, data);
-      setProjectVisibility(map, projectId, true);
-      nextRevealed.add(projectId);
-    }
-    revealedProjectIds = nextRevealed;
+  // A consulta desenha SOMENTE as coberturas que intersectaram, numa camada
+  // própria. Ligar a camada inteira do projeto atingido (comportamento anterior)
+  // enchia o mapa com todos os footprints do voo, e não com o que respondeu.
+  function showIntersectedFootprints(state) {
+    showQueryResults(map, state.query.results, projectColors);
   }
 
   function restoreSelectedHighlight() {
@@ -159,6 +138,7 @@ export async function initializeApplication({ config, store, ui, themeController
       ui.setSidebarHeader?.('Resultados da consulta', description);
       renderQueryPanel(ui.sidebarContent, state.query, state.downloads, {
         selectedResultKey,
+        resultWarningThreshold: config.site.resultWarningThreshold,
         onClear: clearQuery,
         onNewSearch: () => startNewSearch(state.query),
         onCancel: () => runner.cancel(),
@@ -239,10 +219,11 @@ export async function initializeApplication({ config, store, ui, themeController
     if (state.query.status === 'idle' || state.query.status === 'loading-projects') {
       selectedResultKey = null;
       clearResultHighlight(map);
+      clearQueryResults(map);
     }
     if ((state.query.status === 'ready' || state.query.status === 'partial') && state.query.queryId !== revealedQueryId) {
       revealedQueryId = state.query.queryId;
-      revealIntersectedProjects(state);
+      showIntersectedFootprints(state);
     }
     updateScope();
     toolbar.update(state);
