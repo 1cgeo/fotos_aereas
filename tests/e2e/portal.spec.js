@@ -35,10 +35,10 @@ async function clickCoordinate(page, coordinate) {
   await page.locator('.maplibregl-canvas').click({ position: point });
 }
 
+// A consulta por ponto nao tem botao: clicar no mapa ja consulta. O que a tela
+// promete e o passo 2 do "Como consultar", e e ele que estes testes exercitam.
 test('consulta sobreposição por ponto e destaca um resultado', async ({ page }) => {
-  await expect(page.getByText('Cada novo clique ou desenho substitui a busca anterior.')).toBeVisible();
-  await page.getByRole('button', { name: 'Consultar ponto' }).click();
-  await expect(page.getByText(/Clique no mapa\. Clique em outro local/)).toBeVisible();
+  await expect(page.getByText('O clique já consulta o ponto e devolve todas as fotografias que o cobrem.')).toBeVisible();
   await clickCoordinate(page, [-47.89, -15.75]);
   await expect(page.locator('.query-summary__label')).toBeVisible();
   const cards = page.locator('.query-result-card');
@@ -58,7 +58,7 @@ test('consulta sobreposição por ponto e destaca um resultado', async ({ page }
   expect(highlighted).toBe(true);
 });
 
-test('desenha polígono customizado e prepara a fila após o PDF', async ({ page }) => {
+test('desenha polígono customizado e prepara a lista de downloads após o PDF', async ({ page }) => {
   await page.getByRole('button', { name: 'Desenhar área' }).click();
   await clickCoordinate(page, [-47.91, -15.79]);
   await clickCoordinate(page, [-47.84, -15.79]);
@@ -71,7 +71,10 @@ test('desenha polígono customizado e prepara a fila após o PDF', async ({ page
   await page.getByRole('button', { name: 'Preparar download uma a uma' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/^relatorio_fotos_aereas_.*\.pdf$/);
-  await expect(page.getByRole('button', { name: /Baixar próxima/ })).toBeVisible();
+  // Nao ha mais fila sequencial: o PDF ganha a sua linha rebaixavel e cada
+  // fotografia ganha a sua, para poder repetir a que falhou no meio.
+  await expect(page.locator('.download-list--relatorio .download-list__button')).toBeVisible();
+  await expect(page.locator('.download-list:not(.download-list--relatorio) .download-list__button').first()).toBeVisible();
   await page.locator('.query-next-search__button').click();
   await expect(page.locator('.query-summary')).toHaveCount(0);
   await expect(page.getByText(/0 vértice/)).toBeVisible();
@@ -80,7 +83,6 @@ test('desenha polígono customizado e prepara a fila após o PDF', async ({ page
 test('consulta todos os projetos quando nenhum está ligado', async ({ page }) => {
   await page.locator('.project-card input[type="checkbox"]').first().uncheck();
   await expect(page.getByText('Escopo: todos os projetos')).toBeVisible();
-  await page.getByRole('button', { name: 'Consultar ponto' }).click();
   await clickCoordinate(page, [-47.89, -15.75]);
   await expect(page.locator('.query-summary__label')).toBeVisible();
   await expect(page.locator('.query-result-group')).toHaveCount(2);
@@ -89,7 +91,6 @@ test('consulta todos os projetos quando nenhum está ligado', async ({ page }) =
 test('mantém ferramentas e desenho utilizáveis em tela estreita', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('heading', { name: 'Fotos Aéreas' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Consultar ponto' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Desenhar área' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Limpar consulta' })).toBeVisible();
   const canvasBox = await page.locator('.maplibregl-canvas').boundingBox();
