@@ -20,7 +20,8 @@ Ele vive versionado aqui para ter **histórico e backup**. O arquivo que o servi
 
 ## Estado
 
-Cinco aerolevantamentos, 10.584 fotografias.
+Seis aerolevantamentos. O ITC-PR 1980 esta em ingestao; a contagem dele e a das
+fotografias ja gravadas no servidor, e sobe a cada retomada.
 
 | id | voo | fotos |
 |---|---|---|
@@ -29,3 +30,39 @@ Cinco aerolevantamentos, 10.584 fotografias.
 | `fab-pr-1976` | FAB/DSG 1976 | 400 |
 | `sacs-1975` | SACS 1975 | 2.058 |
 | `ast10-1964` | AST-10 1964-1966 | 7.951 |
+| `pr-itc-1980` | Aerolevantamento ITC-PR 1980 (Parana) | em ingestao |
+
+## Sobre o `pr-itc-1980`
+
+Unico voo do catalogo que NAO e do acervo do 1o CGEO: as fotografias e a
+articulacao sao do IAT/ITCG (Governo do Parana), dado publico do GeoPR, e o
+credito esta no `credits` e no `licenseLabel` de cada fotografia.
+
+O que e nosso ali e o CONTORNO. A articulacao publicada registra a area util (o
+retalho sem recobrimento, ~24% da foto), nao o recobrimento; reconstruimos o
+footprint estendendo cada area util pelas arestas que os vizinhos cortam, com o
+lado medido por SIFT no nosso acervo (recobrimento real 62,3%, lado 5,754 km).
+A POSICAO continua sendo a da fonte, com incerteza da ordem de 1 km, e isso vai
+dito no `notes` de cada fotografia.
+
+### Ingestao
+
+Retomavel: o estado vive num SQLite com uma linha por fotografia, e o processo
+pode ser morto e recomecado sem refazer nada.
+
+O banco de estado tem de ficar em disco LOCAL, NUNCA no compartilhamento de rede
+onde ficam as fotografias. Na primeira corrida ele estava na rede em modo WAL e
+travou aos 26%: o WAL do SQLite depende de memoria compartilhada (arquivo -shm)
+que o SMB nao implementa, e os arquivos -wal/-shm continuaram bloqueando o banco
+DEPOIS de o processo morrer. O script agora se recusa a rodar com o banco em
+unidade de rede.
+
+Do voo, 1.162 fotografias (4,0%) estao inacessiveis na origem: 1.090 respondem
+404 e 72 vem corrompidas (um unico byte, servido com HTTP 200 e Content-Type
+image/jpeg). Dessas, 19 foram RESGATADAS do acervo do 1o CGEO, que tem 2.654
+fotografias deste mesmo voo digitalizadas; elas ficam marcadas com procedencia
+propria, porque o enquadramento do nosso scan e maior que o do IAT.
+
+So se publica footprint cuja fotografia esta no disco: a grade e montada a
+partir do estado da ingestao, nunca da grade completa. Publicar footprint cujo
+download quebra e pior do que nao ter a fotografia.

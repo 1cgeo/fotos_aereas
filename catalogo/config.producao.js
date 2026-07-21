@@ -5,7 +5,7 @@
 // projeto aqui e suba os arquivos dele em data/<id>/.
 globalThis.AERIAL_CATALOG_CONFIG = {
   schemaVersion: 1,
-  catalogVersion: '2026-07-20',
+  catalogVersion: '2026-07-21',
   site: {
     kicker: 'Acervo 1º CGEO',
     title: 'Acervo de Fotografias Aéreas Históricas',
@@ -252,6 +252,55 @@ globalThis.AERIAL_CATALOG_CONFIG = {
       },
       download: {
         instructions: 'As fotografias são entregues em JPEG. O negativo digitalizado pode ser solicitado à Divisão de Geoinformação. Neste voo, 182 fotografias têm posição declarada não confiável pela grade de origem, e isso vem indicado na ficha de cada uma.'
+      }
+    },
+    {
+      id: 'pr-itc-1980',
+      enabled: true,
+      initiallyActive: false,
+      sortOrder: 60,
+      title: 'Aerolevantamento ITC-PR 1980',
+      shortTitle: 'ITC-PR 1980',
+      summary: 'Cobertura aerofotogramétrica do Estado do Paraná na escala 1:25.000, executada em 1980 pelo Instituto de Terras e Cartografia do Paraná.',
+      description: [
+        'Recobrimento aerofotogramétrico do Estado do Paraná em 1980, na escala 1:25.000, com cerca de 29 mil fotografias distribuídas em mais de mil faixas de voo.',
+        'As fotografias e a articulação original são do Instituto Água e Terra (IAT/ITCG), do Governo do Paraná, e estão publicadas como dado aberto no GeoPR.',
+        'O contorno de cada fotografia foi reconstruído pela Divisão de Geoinformação a partir da articulação publicada, que registra a área útil (o retalho sem recobrimento) e não o recobrimento da fotografia. O tamanho, a forma e a rotação foram medidos no acervo; a posição é a da fonte, com incerteza da ordem de 1 km.',
+        'O contorno serve para localizar a fotografia, nunca como medida cartográfica.'
+      ],
+      period: {
+        start: '1980-01-01',
+        end: '1980-12-31',
+        display: '1980'
+      },
+      institution: 'Instituto de Terras e Cartografia do Paraná (ITC-PR)',
+      contractor: null,
+      nominalScale: '1:25.000',
+      filmType: 'Preto e branco',
+      spatialCoverage: 'Estado do Paraná',
+      photoCount: 28069,
+      license: {
+        label: 'Instituto Água e Terra (IAT/ITCG), Governo do Paraná - dado público'
+      },
+      credits: 'Fotografias e articulação originais do Instituto Água e Terra (IAT/ITCG), Governo do Paraná, obtidas do GeoPR. Contornos reconstruídos pela Divisão de Geoinformação do 1º Centro de Geoinformação.',
+      links: [
+        {
+          label: 'Articulação original no GeoPR (IAT)',
+          url: 'https://geopr.iat.pr.gov.br/portal/apps/mapviewer/index.html?layers=db5f33c162fc43cba2220075c3d2558e'
+        }
+      ],
+      extent: [-54.640530, -26.749271, -48.072310, -22.487425],
+      data: {
+        footprintsUrl: './data/pr-itc-1980/footprints.geojson',
+        coverageUrl: './data/pr-itc-1980/cobertura.geojson'
+      },
+      style: {
+        color: '#0f766e',
+        fillOpacity: 0.12,
+        lineOpacity: 0.85
+      },
+      download: {
+        instructions: 'As fotografias são entregues em JPEG comprimido (4000 px, tons de cinza), com perda abaixo do grão do filme. O arquivo original, em resolução integral, permanece no acervo do IAT e pode ser obtido em https://imagens.geo.pr.gov.br/itcg-imagens/fotos1980/DDDDD/NNNNN.jpg, onde NNNNN é o número da fotografia com cinco dígitos e DDDDD é o milhar superior de cinco mil, isto é, (número dividido por 5000, parte inteira, mais um) vezes 5000. A regra vale para todas as fotografias, salvo três cujo número tem quatro dígitos sem o zero à esquerda.'
       }
     }
   ]
