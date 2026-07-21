@@ -221,7 +221,7 @@ globalThis.AERIAL_CATALOG_CONFIG = {
       description: [
         'Cobertura aerofotogramétrica do voo AST-10, projeto AF-63-32, executado em cooperação entre o Exército Brasileiro e a Força Aérea dos Estados Unidos.',
         'Voado a 9.144 metros de altura com câmara de 152,4 mm de distância focal, em 206 rolos e 230 faixas, cobrindo 200 folhas na escala 1:100.000.',
-        'O contorno exibido é aproximado e serve para localizar a fotografia, não como medida cartográfica. �0 a maior cobertura do acervo e a mais antiga.'
+        'O contorno exibido é aproximado e serve para localizar a fotografia, não como medida cartográfica. É a maior cobertura do acervo e a mais antiga.'
       ],
       period: {
         start: '1964-11-03',
@@ -263,10 +263,9 @@ globalThis.AERIAL_CATALOG_CONFIG = {
       shortTitle: 'ITC-PR 1980',
       summary: 'Cobertura aerofotogramétrica do Estado do Paraná na escala 1:25.000, executada em 1980 pelo Instituto de Terras e Cartografia do Paraná.',
       description: [
-        'Recobrimento aerofotogramétrico do Estado do Paraná em 1980, na escala 1:25.000, com cerca de 29 mil fotografias distribuídas em mais de mil faixas de voo.',
-        'As fotografias e a articulação original são do Instituto Água e Terra (IAT/ITCG), do Governo do Paraná, e estão publicadas como dado aberto no GeoPR.',
-        'O contorno de cada fotografia foi reconstruído pela Divisão de Geoinformação a partir da articulação publicada, que registra a área útil (o retalho sem recobrimento) e não o recobrimento da fotografia. O tamanho, a forma e a rotação foram medidos no acervo; a posição é a da fonte, com incerteza da ordem de 1 km.',
-        'O contorno serve para localizar a fotografia, nunca como medida cartográfica.'
+        'Recobrimento aerofotogramétrico do Estado do Paraná em 1980, na escala 1:25.000.',
+        'Fotografias e articulação originais do Instituto Água e Terra (IAT/ITCG), Governo do Paraná, publicadas como dado aberto no GeoPR.',
+        'O contorno foi reconstruído pela Divisão de Geoinformação: tamanho, forma e rotação são medidos, mas a posição é a da fonte, com incerteza da ordem de 1 km. Serve para localizar a fotografia, não como medida cartográfica.'
       ],
       period: {
         start: '1980-01-01',
@@ -282,7 +281,7 @@ globalThis.AERIAL_CATALOG_CONFIG = {
       license: {
         label: 'Instituto Água e Terra (IAT/ITCG), Governo do Paraná - dado público'
       },
-      credits: 'Fotografias e articulação originais do Instituto Água e Terra (IAT/ITCG), Governo do Paraná, obtidas do GeoPR. Contornos reconstruídos pela Divisão de Geoinformação do 1º Centro de Geoinformação.',
+      credits: 'Fotografias e articulação do Instituto Água e Terra (IAT/ITCG), Governo do Paraná, via GeoPR. Contornos reconstruídos pelo 1º Centro de Geoinformação.',
       links: [
         {
           label: 'Articulação original no GeoPR (IAT)',
@@ -300,7 +299,7 @@ globalThis.AERIAL_CATALOG_CONFIG = {
         lineOpacity: 0.85
       },
       download: {
-        instructions: 'As fotografias são entregues em JPEG comprimido (4000 px, tons de cinza), com perda abaixo do grão do filme. O arquivo original, em resolução integral, permanece no acervo do IAT e pode ser obtido em https://imagens.geo.pr.gov.br/itcg-imagens/fotos1980/DDDDD/NNNNN.jpg, onde NNNNN é o número da fotografia com cinco dígitos e DDDDD é o milhar superior de cinco mil, isto é, (número dividido por 5000, parte inteira, mais um) vezes 5000. A regra vale para todas as fotografias, salvo três cujo número tem quatro dígitos sem o zero à esquerda.'
+        instructions: 'As fotografias são entregues em JPEG de 4.000 px, em tons de cinza. O arquivo em resolução integral permanece no acervo do IAT e pode ser obtido no GeoPR.'
       }
     }
   ]
