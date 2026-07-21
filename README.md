@@ -16,7 +16,8 @@ O repositório já inclui dois aerolevantamentos fictícios de Brasília, seis f
 - consulta apenas nos projetos ligados ou em todo o catálogo quando nenhum está ligado;
 - resultados com thumbnail, metadados, seleção persistente, enquadramento e destaque no mapa;
 - PDF dinâmico com os dados dos voos e fotografias selecionadas;
-- fila manual de downloads, uma imagem por vez, adequada a arquivos pesados;
+- download da consulta inteira num ZIP, com o relatório PDF e a planilha de metadados dentro, montado no navegador e gravado em fluxo no disco (sem gravação em disco, sai fatiado em partes que cabem na memória);
+- fila manual de downloads, uma imagem por vez, para quem quer escolher no meio da lista;
 - painel recolhível em tablets e celulares, toolbar compacta e resultados adaptáveis;
 - validação de configuração, GeoJSON, URLs e nomes de arquivo no cliente.
 
@@ -68,7 +69,7 @@ Controles já aplicados:
 - DOM construído com `textContent` e APIs de elementos, sem HTML dinâmico;
 - protocolos perigosos, credenciais em URL e nomes de arquivo com caminho são rejeitados;
 - tamanho, estrutura e coordenadas do GeoJSON têm limites;
-- downloads em lote não fazem fetch nem ZIP dos originais no navegador;
+- o ZIP em lote busca as fotografias por `fetch` de mesma origem (coberto por `connect-src 'self'`), sem credenciais e sem recompressão, e escreve em fluxo: o pico de memória é o de UMA fotografia, não o da seleção;
 - CSP, bloqueio de frames, `nosniff`, política de referenciador e Permissions Policy;
 - sourcemaps de produção desabilitados e dependências auditadas;
 - `config.js` sem cache e assets versionados com cache imutável.

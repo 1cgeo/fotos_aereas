@@ -217,6 +217,9 @@ export async function initializeApplication({ config, store, ui, themeController
         onClearHighlight: restoreSelectedHighlight,
         onSelect: focusResult,
         onDownloadAll: () => downloads.start(store.getState().query),
+        onDownloadZip: () => downloads.startZip(store.getState().query),
+        onDownloadZipParte: (indice) => downloads.downloadZipParte(indice),
+        onCancelZip: () => downloads.cancelZip(),
         onDownloadItem: (key) => downloads.downloadItem(key),
         onDownloadReport: () => downloads.downloadReport()
       });

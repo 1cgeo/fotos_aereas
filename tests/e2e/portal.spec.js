@@ -68,7 +68,7 @@ test('desenha polígono customizado e prepara a fila após o PDF', async ({ page
   await expect(page.locator('.query-summary__label')).toBeVisible();
 
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Preparar download de todas' }).click();
+  await page.getByRole('button', { name: 'Preparar download uma a uma' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/^relatorio_fotos_aereas_.*\.pdf$/);
   await expect(page.getByRole('button', { name: /Baixar próxima/ })).toBeVisible();

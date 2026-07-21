@@ -46,3 +46,9 @@ export function updateQuery(store, patch) {
 export function setDownloadState(store, patch) {
   store.setState((state) => replaceNested(state, 'downloads', patch));
 }
+
+export function setZipState(store, patch) {
+  store.setState((state) => replaceNested(state, 'downloads', {
+    zip: { ...state.downloads.zip, ...patch }
+  }));
+}

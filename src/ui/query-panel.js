@@ -1,3 +1,5 @@
+import { formataTamanho, suportaGravacaoEmDisco } from '../downloads/zip-download.js';
+
 function element(tagName, className, text) {
   const node = document.createElement(tagName);
   if (className) node.className = className;
@@ -145,6 +147,112 @@ function linhaDeDownload({ rotulo, arquivo, baixado, estado, onClick, classe = '
   linha.append(button);
   if (baixado) linha.append(element('small', 'download-list__estado', estado));
   return linha;
+}
+
+// O ZIP da consulta inteira. É o caminho normal de quem pediu 50 fotografias;
+// a lista foto a foto continua existindo para quem quer só duas ou três.
+const ZIP_OCIOSO = Object.freeze({
+  status: 'idle', modo: null, partes: [], concluidas: new Set(), falhas: [], parteAtual: null, progresso: null
+});
+
+function zipWorkflow(query, zipState, handlers) {
+  const zip = { ...ZIP_OCIOSO, ...(zipState || {}) };
+  const section = element('section', 'zip-download');
+  const total = query.results.length;
+  const bytes = query.results.reduce((soma, r) => soma + (Number(r.sizeBytes) || 0), 0);
+  const tamanho = formataTamanho(bytes);
+  const preparando = zip.status === 'preparing';
+  const rodando = zip.status === 'running' || preparando;
+
+  const botao = element(
+    'button',
+    'button button--primary zip-download__acao',
+    tamanho
+      ? `Baixar tudo em ZIP (${total} fotografia${total === 1 ? '' : 's'}, ${tamanho})`
+      : `Baixar tudo em ZIP (${total} fotografia${total === 1 ? '' : 's'})`
+  );
+  botao.type = 'button';
+  botao.disabled = rodando;
+  botao.addEventListener('click', handlers.onDownloadZip);
+  section.append(botao);
+
+  if (zip.status === 'idle') {
+    section.append(element(
+      'p',
+      'zip-download__hint',
+      suportaGravacaoEmDisco()
+        ? 'Um arquivo só, com o relatório PDF e a planilha de metadados dentro. O navegador pergunta onde salvar e grava direto no disco, sem limite de tamanho.'
+        : 'Vai com o relatório PDF e a planilha de metadados dentro. Seu navegador monta o ZIP na memória, então uma seleção grande sai em partes, um clique cada; em Chrome ou Edge sai num arquivo só.'
+    ));
+    return section;
+  }
+
+  if (preparando) {
+    section.setAttribute('aria-busy', 'true');
+    section.append(contagem('Gerando o relatório PDF que vai dentro do ZIP…'));
+    return section;
+  }
+
+  if (rodando) {
+    const parte = zip.partes[zip.parteAtual] || null;
+    const progresso = zip.progresso || { feitos: 0, total: parte?.total || total };
+    section.setAttribute('aria-busy', 'true');
+    const rotulo = zip.partes.length > 1
+      ? `Parte ${zip.parteAtual + 1} de ${zip.partes.length}: ${progresso.feitos} de ${progresso.total} fotografias`
+      : `${progresso.feitos} de ${progresso.total} fotografias no ZIP`;
+    section.append(contagem(rotulo));
+    const barra = document.createElement('progress');
+    barra.className = 'zip-download__barra';
+    barra.max = Math.max(1, progresso.total);
+    barra.value = progresso.feitos;
+    barra.setAttribute('aria-label', 'Progresso do ZIP');
+    section.append(barra);
+    const cancelar = element('button', 'button button--secondary', 'Cancelar');
+    cancelar.type = 'button';
+    cancelar.addEventListener('click', handlers.onCancelZip);
+    section.append(cancelar);
+    return section;
+  }
+
+  if (zip.status === 'error') {
+    const falha = element('p', 'inline-error', 'Não foi possível montar o ZIP. Tente de novo ou baixe as fotografias pela lista abaixo.');
+    falha.setAttribute('aria-live', 'polite');
+    section.append(falha);
+  }
+  if (zip.status === 'cancelled') {
+    section.append(element('p', 'zip-download__hint', 'ZIP cancelado. O arquivo iniciado no disco pode ser apagado.'));
+  }
+
+  // Cada parte é um ZIP inteiro e independente, e continua clicável depois de
+  // baixada: quem perdeu o arquivo repete a parte, não a seleção toda.
+  if (zip.partes.length > 1) {
+    const concluidas = zip.concluidas || new Set();
+    section.append(contagem(`${concluidas.size} de ${zip.partes.length} partes baixadas.`));
+    const lista = element('ul', 'download-list');
+    zip.partes.forEach((parte, indice) => {
+      const tamanhoParte = formataTamanho(parte.bytes);
+      lista.append(linhaDeDownload({
+        rotulo: `Parte ${indice + 1} de ${zip.partes.length} (${parte.total} fotografias${tamanhoParte ? `, ${tamanhoParte}` : ''})`,
+        arquivo: parte.nomeArquivo,
+        baixado: concluidas.has(indice),
+        estado: 'Baixada. Clique para baixar de novo.',
+        onClick: () => handlers.onDownloadZipParte?.(indice)
+      }));
+    });
+    section.append(lista);
+  }
+
+  if (zip.falhas.length > 0) {
+    section.append(element(
+      'p',
+      'query-warning',
+      `${zip.falhas.length} fotografia(s) não puderam ser lidas e ficaram de fora; a lista delas vai dentro do ZIP, em FOTOGRAFIAS_QUE_FALHARAM.txt.`
+    ));
+  }
+  if (zip.status === 'ready' && (zip.concluidas?.size || 0) === zip.partes.length) {
+    section.append(element('p', 'download-workflow__complete', 'ZIP concluído.'));
+  }
+  return section;
 }
 
 function downloadWorkflow(downloads, handlers) {
@@ -379,13 +487,20 @@ export function renderQueryPanel(container, query, downloads, handlers) {
     if (query.results.length === 0) {
       content.append(element('p', 'empty-state', 'Nenhuma fotografia cobre o local consultado. Tente uma nova posição ou área.'));
     } else {
-      const all = element('button', 'button button--primary query-download-all', 'Preparar download de todas');
+      const all = element('button', 'button button--secondary query-download-all', 'Preparar download uma a uma');
       all.type = 'button';
       all.disabled = downloads.reportStatus === 'generating';
       all.addEventListener('click', handlers.onDownloadAll);
-      const downloadHint = element('p', 'query-download-hint', 'Gera primeiro um PDF de conferência e depois libera as imagens uma a uma.');
+      const downloadHint = element('p', 'query-download-hint', 'Gera um PDF de conferência e libera as imagens uma a uma, para escolher no meio da lista.');
       const inspectionHint = element('p', 'query-inspection-hint', 'Passe o mouse sobre uma foto para pré-visualizar a cobertura ou use “Ver no mapa” para mantê-la destacada.');
-      content.append(all, downloadHint, downloadWorkflow(downloads, handlers), inspectionHint, resultList(query, handlers));
+      content.append(
+        zipWorkflow(query, downloads.zip, handlers),
+        all,
+        downloadHint,
+        downloadWorkflow(downloads, handlers),
+        inspectionHint,
+        resultList(query, handlers)
+      );
     }
   }
 
